@@ -131,7 +131,9 @@ void Odometry2(){
 
     left_encoder_pos = LF.get_position(); //just set this to zero.
     right_encoder_pos = RF.get_position();//use this one for ododm configuration
-    center_encoder_pos = 0; // use the side to side tracking wheel and get the position here. 
+    center_encoder_pos = 0; // use the side to side tracking wheel and get the position here.
+    
+//just comment the above lines (left and right encoder setting lines), and uncomment below     
 
     // left_encoder_pos = (ODOMY.get_position()/36000.0)*(2*pi);
     // right_encoder_pos =(ODOMY.get_position()/36000.0)*(2*pi);
