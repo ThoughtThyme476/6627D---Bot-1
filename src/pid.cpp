@@ -776,7 +776,7 @@ void driveStraightC(int target) {
     double x = 0;
     x = double(abs(target));
     timeout = (-0.000000000000750853* pow(x,5)) + (  0.00000000378468 * pow(x,4)) + (-0.00000629527 * pow(x,3)) + (0.00422834* pow(x,2)) + (-0.665814 * x) + 707.21366; 
-    if (target > 0){
+    if (target > 0){ 
     target = target + 500;
  } else{
     target = target - 500;
