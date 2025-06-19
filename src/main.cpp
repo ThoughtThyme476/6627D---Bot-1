@@ -4,6 +4,8 @@
 #include "pid.h"
 #include "robot.h"
 #include "auton.h"
+#include "field.c"
+lv_obj_t* image;
 bool stay_clamp = true;
 
 using namespace pros;
@@ -24,9 +26,12 @@ void on_center_button() {
 	}
 }//bla bla bla
 //bla bla bla
-
+LV_IMG_DECLARE(Image);
 void initialize() {
 
+lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
+lv_img_set_src(img, &Image);
+lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
 }
 void disabled() { 
