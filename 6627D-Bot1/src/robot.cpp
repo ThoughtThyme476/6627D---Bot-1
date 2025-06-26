@@ -7,15 +7,16 @@
 #define LF_PORT 1 
 #define LM_PORT 2 
 #define LB_PORT 3 
-#define RF_PORT 10
-#define RM_PORT 9 
-#define RB_PORT 8 
-#define IMU_PORT 5
-#define Intake_port 7
-#define LadyBrown_PORT 19
-#define OPTICAL_PORT 20
-#define DISTANCE_PORT 19
-#define ROTATION_PORT 4
+#define RF_PORT 4
+#define RM_PORT 5 
+#define RB_PORT 6 
+#define IMU_PORT 7
+#define Intake_port 8
+#define LadyBrown_PORT 9
+#define OPTICAL_PORT 10
+#define DISTANCE_PORT 11
+#define DISTANCE_PORT2 12
+#define ROTATION_PORT 13
 
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
@@ -31,7 +32,8 @@ pros::Motor LadyBrown (LadyBrown_PORT, pros::E_MOTOR_GEARSET_18, true);
 pros::Imu imu(IMU_PORT);
 pros::Optical eyes(OPTICAL_PORT);
 pros::Rotation roto(ROTATION_PORT);
-pros::Distance dis (DISTANCE_PORT);
+pros::Distance dist_left (DISTANCE_PORT);
+pros::Distance dist_right (DISTANCE_PORT2);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
 
 

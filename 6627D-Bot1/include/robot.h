@@ -19,7 +19,8 @@ extern pros::Motor LadyBrown;
 extern pros::Imu imu;
 extern pros::Optical eyes; 
 extern pros::Rotation roto;
-extern pros::Distance dis;
+extern pros::Distance dist_left;
+extern pros::Distance dist_right;
 extern pros::Controller con;
 
 
