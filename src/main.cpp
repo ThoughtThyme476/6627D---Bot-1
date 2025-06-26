@@ -4,8 +4,8 @@
 #include "pid.h"
 #include "robot.h"
 #include "auton.h"
-#include "field.c"
-lv_obj_t* image;
+#include "field.h"
+lv_obj_t* Image;
 bool stay_clamp = true;
 
 using namespace pros;
@@ -162,7 +162,7 @@ double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_tempe
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
     con.print(0,0,"Time:%f       ", float(time2));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
-    con.print(1,0,"start?%f      ", bool(InitColor));
+    con.print(1,0,"start?%f      ", double(imu.get_heading()));
 } else if (time % 150 == 0){
     con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake.get_temperature()), int(LadyBrown.get_temperature()));
 }
