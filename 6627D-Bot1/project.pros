@@ -1,7 +1,7 @@
 {
     "py/object": "pros.conductor.project.Project",
     "py/state": {
-        "project_name": "6627D_Bot_1",
+        "project_name": "6627D-Bot1",
         "target": "v5",
         "templates": {
             "kernel": {
