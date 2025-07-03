@@ -55,36 +55,36 @@
 
  }
  
-//  void autonomous(){
-//   if (atn == 0) {
-//   }else if (atn == 0) {
-//     DriveStraightAuto();
-//   }
-//    else if (atn == 1) {
-//     Standard_AWP_red();
-//   } 
-//   else if (atn ==2) {
-//    Standard_AWP_blue();
-//   } 
-//   else if (atn ==3) {
-//     Goal_Rush_red();
-//   } 
-//   else if (atn ==4) {
-//     Goal_Rush_Blue();
-//   } 
-//   else if (atn ==5) {
-//     goal_safe_side_blue();
-//   } 
-//   else if (atn ==6) {
-//     goal_safe_side_red();
-//   } 
-//   else if (atn ==7) {
-//     Ring_Rush_red();
-//   }
-//   else if (atn ==8) {
-//     Ring_Rush_blue();
-//   }
-//   else if (atn ==9) {
-//     skill_run();
-//   }
-// }
+ void autonomous(){
+  if (atn == 0) {
+  }else if (atn == 0) {
+    DriveStraightAuto();
+  }
+   else if (atn == 1) {
+    Standard_AWP_red();
+  } 
+  else if (atn ==2) {
+   Standard_AWP_blue();
+  } 
+  else if (atn ==3) {
+    Goal_Rush_red();
+  } 
+  else if (atn ==4) {
+    Goal_Rush_Blue();
+  } 
+  else if (atn ==5) {
+    goal_safe_side_blue();
+  } 
+  else if (atn ==6) {
+    goal_safe_side_red();
+  } 
+  else if (atn ==7) {
+    Ring_Rush_red();
+  }
+  else if (atn ==8) {
+    Ring_Rush_blue();
+  }
+  else if (atn ==9) {
+    skill_run();
+  }
+}

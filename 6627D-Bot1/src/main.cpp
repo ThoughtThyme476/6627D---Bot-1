@@ -5,7 +5,7 @@
 #include "robot.h"
 #include "auton.h"
 #include "field.h"
-lv_obj_t* Image;
+lv_obj_t* Image2;
 bool stay_clamp = true;
 
 using namespace pros;
@@ -24,13 +24,13 @@ void on_center_button() {
 	} else {
 		pros::lcd::clear_line(2);
 	}
-}//bla bla bla
-//bla bla bla
+}
+
 LV_IMG_DECLARE(Image);
 void initialize() {
 
 lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
-lv_img_set_src(img, &Image);
+lv_img_set_src(img, &Image2);
 lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
 }
@@ -58,8 +58,6 @@ while(true){
 	if(pressed ==1){
 		atn++;
 	}
-
-
 		if(atn>9){//change number to number of autons
 			atn=0;
 		}
