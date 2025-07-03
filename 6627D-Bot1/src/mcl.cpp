@@ -122,10 +122,101 @@ void updateParticlesWithSensor() {
         double w_right = exp(-(err_right * err_right) / (2*var));
         p.weight = w_left * w_right;
         weight_sum += p.weight;
-    }
 
+        
+    }
+    if (weight_sum > 1e-9){ 
+        for (Particle& p : particles) {
+            p.weight /= weight_sum;
+        }
+    } else {
+        for (Particle& p : particles){
+        p.weight = 1.0 / N_PARTICLES;
+        }
+    }
 }
 
+void resampleParticles() {
+    std::vector<Particle> newParticles;
 
+    newParticles.resize(N_PARTICLES);
+    std::vector<double> cumw(N_PARTICLES);
+    double cum = 0;
+    for(int i = 0; i < N_PARTICLES; i++){
+        cum += particles[i].weight;
+        cumw[i] = cum;
+    }
 
+    if (cumw.back() == 0) {
 
+        for (int i = 0; i < N_PARTICLES; i++){
+            cumw[i] = (i+1) / (double)N_PARTICLES;
+        }
+    } 
+
+    std::uniform_real_distribution<double> dist(0.0, 1.0 / N_PARTICLES);
+    double start = dist(rng);
+    double step = 1.0 / N_PARTICLES;
+    double ptr = start;
+    int j = 0; 
+    for (int i = 0; i < N_PARTICLES; ++i) {
+        while (j < N_PARTICLES &&  cumw[j] < ptr) {
+            j++;
+        }
+        if(j == N_PARTICLES) j = N_PARTICLES - 1;
+        newParticles[i] = particles[j];
+        newParticles[i].weight = 1.0 / N_PARTICLES;
+        ptr += step;
+    }
+    particles = newParticles;
+
+    std::uniform_real_distribution<double> distX(0, FIELD_WIDTH);
+    std::uniform_real_distribution<double> distY(0, FIELD_LENGTH);
+    std::uniform_real_distribution<double> distTheta(0, 360);
+    particles[0].x = distX(rng);
+    particles[0].y = distY(rng);
+    particles[0].theta = distTheta(rng);
+    particles[0].weight = 1.0 / N_PARTICLES;
+}
+
+Particle getEstimatedPos() {
+    Particle estimate;
+    double mean_x = 0, mean_y = 0;
+    double mean_sin = 0, mean_cos = 0;
+    for (const Particle& p : particles) {
+        mean_x += p.x * p.weight;
+        mean_y +=  p.y * p.weight;
+        mean_cos += cos(p.theta * M_PI / 180.00) * p.weight;
+        mean_sin += sin(p.theta * M_PI / 180.00) * p.weight;
+    }
+    estimate.x = mean_x;
+    estimate.y = mean_y;
+    estimate.theta = atan2(mean_sin, mean_cos) * 180.0 / M_PI;
+    if (estimate.theta < 0) estimate.theta  += 360;
+    estimate.weight = 1.0;
+    return estimate;
+}
+
+//under 200 lines club :}
+void IntitializeMCL(){
+    
+    imu.reset(true);
+    LM.tare_position();
+    RM.tare_position();
+    prev_left_enc = 0;
+    prev_right_enc = 0;
+    prev_imu_heading = imu.get_rotation();
+    
+    initalizeParticles(0,0,0, false); // the bool sets the particles to initalize aruond the guess, and since there is no guess, we put false 
+}
+
+void RunMCL() {
+
+    while (true) {
+    updateParticleWithMotion();
+    updateParticlesWithSensor();
+    resampleParticles();
+    Particle est =  getEstimatedPos();
+
+    }
+}
