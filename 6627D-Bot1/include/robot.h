@@ -13,8 +13,8 @@ extern pros::Motor RF;
 extern pros::Motor RM;
 extern pros::Motor RB;
 
-extern pros::Motor Intake;
-extern pros::Motor LadyBrown;
+extern pros::Motor Intake1;
+extern pros::Motor Intake2;
 
 extern pros::Imu imu;
 extern pros::Optical eyes; 

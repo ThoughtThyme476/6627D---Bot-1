@@ -1136,7 +1136,7 @@ if(trueTarget > 180) {
         }
 
   if((eyes.get_hue()<40 && eyes.get_hue()>5) && eyes.get_proximity() > 150){
-    Intake.move(0);
+    Intake1.move(0);
   }
 
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
@@ -1239,7 +1239,7 @@ if(trueTarget > 180) {
         }
 
    if((eyes.get_hue()<230 && eyes.get_hue()>170) && eyes.get_proximity() > 150){
-    Intake.move(0);
+    Intake1.move(0);
     } 
 
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
@@ -1337,7 +1337,7 @@ if(trueTarget > 180) {
         }
 
   if((eyes.get_hue()<40 && eyes.get_hue()>5) && eyes.get_proximity() > 150){
-    Intake.move(0);
+    Intake1.move(0);
   }
 
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
@@ -1442,7 +1442,7 @@ if(trueTarget > 180) {
         }
 
    if((eyes.get_hue()<260 && eyes.get_hue()>100) && eyes.get_proximity() > 100){
-    Intake.move(0);
+    Intake1.move(0);
     } 
 
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
@@ -1976,5 +1976,5 @@ void wallResetF(int resetTime){
 }
 
 void Rings(int motorVoltage){
-    Intake.move(motorVoltage);
+    Intake1.move(motorVoltage);
 }

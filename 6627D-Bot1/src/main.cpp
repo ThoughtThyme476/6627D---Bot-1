@@ -131,8 +131,8 @@ while (true) {
 int power = con.get_analog(ANALOG_LEFT_Y);
 int RX = con.get_analog(ANALOG_RIGHT_X);
 int turn = int(pow(RX, 3)/ 16129);
-int left= power + turn; 
-int right = power - turn;
+int left= power - turn; 
+int right = power + turn;
 
 // if(con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)){
 // 	arcToggle = !arcToggle;
@@ -151,18 +151,30 @@ if (tankToggle){
 if (arcToggle) {
 LF.move(left);
 LM.move(left);
-LB.move(left);
+LB.move(right);
 RF.move(right);
 RM.move(right);
-RB.move(right);
+RB.move(left);
 }
+
+if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+	Intake1.move(-127);
+	Intake2.move(127);
+} else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
+	Intake1.move(127);
+	Intake2.move(-127);
+} else {
+	Intake1.move(0);
+	Intake2.move(0);
+}
+
 double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
     con.print(0,0,"Time:%f       ", float(time2));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
     con.print(1,0,"start?%f      ", double(imu.get_heading()));
 } else if (time % 150 == 0){
-    con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake.get_temperature()), int(LadyBrown.get_temperature()));
+    con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
 }
 
 delay(10);
