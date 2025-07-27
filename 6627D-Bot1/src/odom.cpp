@@ -185,7 +185,7 @@ odo_time += 10;
 
 }
 
-void boomerang(double xTarget, double yTarget){
+void boomerang(double xTarget, double yTarget){ // in encoder units. Move robot to the point and check x and Y tracking wheels 
     double hypot = 0;
     double voltage = 0;
     double heading_correction = 0; 
