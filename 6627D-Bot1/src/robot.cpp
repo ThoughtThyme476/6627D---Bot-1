@@ -4,11 +4,11 @@
 
 //header Guards, safety
 
-#define LF_PORT 7 
-#define LM_PORT 2 
+#define LF_PORT 7
+#define LM_PORT 5 
 #define LB_PORT 3 
 #define RF_PORT 4
-#define RM_PORT 5 
+#define RM_PORT 1 
 #define RB_PORT 6 
 #define IMU_PORT 20
 #define Intake1_port 8
@@ -19,11 +19,11 @@
 #define ROTATION_PORT 13
 
 
-pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
-pros::Motor LM (LM_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
+pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
+pros::Motor LM (LM_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
 pros::Motor LB (LB_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
-pros::Motor RF (RF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
-pros::Motor RM (RM_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
+pros::Motor RF (RF_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
+pros::Motor RM (RM_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
 pros::Motor RB (RB_PORT, pros::E_MOTOR_GEARSET_06, false); //keep                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
 
 pros::Motor Intake1 (Intake1_port, pros::E_MOTOR_GEARSET_18, true);

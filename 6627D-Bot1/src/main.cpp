@@ -118,10 +118,9 @@ bool hooks_Macro = false;
 bool  hooks_Macro_Rev = false;
 bool fishy_macro = false;
 bool return_fishmech = false;
-bool MogoMechToggle = false;
+bool  IntakePiston = false;
 bool LBC = false;
 int Macro = 0;
-bool IntakePiston = false;
 eyes.set_led_pwm(100);
 
 
@@ -149,11 +148,11 @@ if (tankToggle){
 }
 
 if (arcToggle) {
-LF.move(left);
-LM.move(left);
+LF.move(right);
+LM.move(right);
 LB.move(right);
-RF.move(right);
-RM.move(right);
+RF.move(left);
+RM.move(left);
 RB.move(left);
 }
 
@@ -167,6 +166,11 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	Intake1.move(0);
 	Intake2.move(0);
 }
+
+  if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
+	IntakePiston = !IntakePiston;
+	 }
+ Intake_Piston.set_value(IntakePiston);
 
 double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
