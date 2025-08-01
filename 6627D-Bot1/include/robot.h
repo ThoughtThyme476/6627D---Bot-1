@@ -15,7 +15,7 @@ extern pros::Motor RB;
 
 extern pros::Motor Intake1;
 extern pros::Motor Intake2;
-
+extern pros::Motor MainIntake;
 extern pros::Imu imu;
 extern pros::Optical eyes; 
 extern pros::Rotation roto;

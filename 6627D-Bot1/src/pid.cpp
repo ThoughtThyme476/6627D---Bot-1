@@ -108,8 +108,9 @@ double calcPID(double target, double input, int integralKI, int maxIntegral){
     // Odometry2();
     // stall();
     //replaced text;
-   ColorSort();
+//    ColorSort();
   // StallProtection();
+  
     
     int integral;
     prevError = error;
@@ -253,7 +254,7 @@ void driveStraight(int target) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
          if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -334,7 +335,7 @@ void driveStraight(int target) {
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
     //setConstants(variKP, TURN_KI, variKD);
     if(abs(error) <= 3){
-        setConstants(10, 0, 0);
+        setConstants(12.5, 0, 0);
     } else{
         setConstants(TURN_KP, TURN_KI, TURN_KD); 
     } 
@@ -426,7 +427,7 @@ void driveStraight(int target) {
     while(true) { 
 
     if(abs(error) <= 3){
-        setConstants(10, 0, 0);
+        setConstants(12.5, 0, 0);
     } else{
          setConstants(TURN_KP, TURN_KI, TURN_KD); 
     }     
@@ -460,7 +461,7 @@ void driveStraight(int target) {
 
         if (count >= 20 || time2 > timeout) {
 
-            break;
+             break;
         }
         if(time2 % 50 == 0 && time2 % 100 != 0 && time2 % 150!= 0){
             con.print(0,0, "ERROR: %f           ", float(error));
@@ -525,7 +526,7 @@ void driveTurnT(int target){
     // variKD = ((-0.000000010414) * pow(x,5)) + (0.00000436151 * pow(x,4)) + (-0.000635881 * pow(x,3)) + (0.0378021 * pow(x,2)) + (-0.805858 * x) + 69.3766;
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
     if(abs(error) <= 3){
-        setConstants(10, 0, 0);
+        setConstants(12.5, 0, 0);
     } else{
         setConstants(TURN_KP, TURN_KI, TURN_KD); 
     }  
@@ -606,7 +607,7 @@ void driveStraight2(int target) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }  
@@ -698,7 +699,7 @@ void driveStraightRush(int target) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -797,7 +798,7 @@ void driveStraightC(int target) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -898,7 +899,7 @@ void driveClamp(int target, int clampDistance) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -996,7 +997,7 @@ void driveClampS(int target, int clampDistanceFromTarget, int speed) {
         
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1097,7 +1098,7 @@ void driveSortHoldRed(int target, int speed) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1200,7 +1201,7 @@ void driveSortHoldblue(int target, int speed) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1298,7 +1299,7 @@ void driveSortHoldRedC(int target, int speed) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1403,7 +1404,7 @@ void driveSortHoldblueC(int target, int speed){
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1508,7 +1509,7 @@ void driveStraightSlow(int target, int speed) { // RETUNE TIMEOUT!! SLOW PID!
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3, 0, 0);
+            setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   

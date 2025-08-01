@@ -13,10 +13,11 @@
 #define IMU_PORT 20
 #define Intake1_port 8
 #define Intake2_PORT 11
-#define OPTICAL_PORT 10
-#define DISTANCE_PORT 14
-#define DISTANCE_PORT2 12
-#define ROTATION_PORT 13
+#define MainIntake_PORT 13
+#define OPTICAL_PORT 14
+#define DISTANCE_PORT 15
+#define DISTANCE_PORT2 16
+#define ROTATION_PORT 17
 
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
@@ -28,6 +29,7 @@ pros::Motor RB (RB_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
 
 pros::Motor Intake1 (Intake1_port, pros::E_MOTOR_GEARSET_18, true);
 pros::Motor Intake2 (Intake2_PORT, pros::E_MOTOR_GEARSET_18, true);
+pros::Motor MainIntake (MainIntake_PORT, pros::E_MOTOR_GEARSET_06, true);
 
 pros::Imu imu(IMU_PORT);
 pros::Optical eyes(OPTICAL_PORT);

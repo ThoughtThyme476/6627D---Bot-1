@@ -5,9 +5,10 @@
 #ifndef PIDH
 #define PIDH
 
-#define STRAIGHT_KP 1 
-#define STRAIGHT_KI 0 
-#define STRAIGHT_KD 0 
+#define STRAIGHT_KP 3.25 
+#define STRAIGHT_KI 0.2 
+#define STRAIGHT_KD 28 
+//done. Keep as is 
 
 #define STRAIGHT_INTEGRAL_KI 40//
 #define STRAIGHT_MAX_INTEGRAL 14.5//
@@ -56,9 +57,9 @@ extern int viewTime;
 
 
 
-#define TURN_KP 1//
-#define TURN_KI 0// 
-#define TURN_KD 0// 
+#define TURN_KP 3.5//
+#define TURN_KI 0.1// 
+#define TURN_KD 38.5// 
 
 #define TURN_INTRGRAL_KI 30
 #define TURN_MAX_INTEGRAL 25
@@ -75,9 +76,9 @@ extern int viewTime;
 #define LIFT_KD 0// 
 
 //straight stuff
-#define HEADING_KP 1
+#define HEADING_KP 5
 #define HEADING_KI 0
-#define HEADING_KD 0
+#define HEADING_KD 7
 #define HEADING_MAX_INTEGRAL 0
 #define HEADING_INTEGRAL_KI 0
 
