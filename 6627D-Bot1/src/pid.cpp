@@ -647,8 +647,8 @@ if(trueTarget > 180) {
         }
 
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
-        if (abs(target - encoderAVG) <= 3) count++;
-        if (count >= 20 || time2 > timeout){
+        if (abs(target - encoderAVG) <= 2) count++;
+        if (count >= 25 || time2 > timeout){
           break;
         }
 
@@ -1594,9 +1594,8 @@ if(trueTarget > 180){
 int count = 0;
 time2 = 0;
 resetEncoders();
-
 ltarget = double((theta/360) *2 * pi * radius);
-rtarget = double((theta / 360) * 2 * pi *(radius + 725)); 
+rtarget = double((theta / 360) * 2 * pi *(radius + 390)); 
 
 while (true){
 
@@ -1641,13 +1640,13 @@ if(((trueTarget + leftcorrect) < 0) && (position > 0)){
     
     setConstants(ARC_HEADING_KP, ARC_HEADING_KI, ARC_HEADING_KD);
 int fix = calcPID3((trueTarget + leftcorrect), position, ARC_HEADING_INTEGRAL_KI, ARC_HEADING_MAX_INTEGRAL);
-    if (abs(ltarget - encoderAVGL) <= 25) fix = 0;  
+    // if (abs(ltarget - encoderAVGL) <= 25) fix = 0;  
     //fix = 0;
     chasMove( (voltageL + fix), (voltageL + fix ), (voltageL + fix), (voltageR - fix), (voltageR - fix), (voltageR - fix));
     if ((abs(ltarget - encoderAVGL) <= 4) && (abs(rtarget - encoderAVGR)<= 4)) count++;
     if (count >= 20  || time2 > timeout){
     trueTarget -= theta;
-       break;
+    //    break;
     }
      if(time2 % 50 == 0 && time2 % 100 != 0 && time2 % 150!= 0){
             con.print(0,0, "fix: %f           ", float(fix));
@@ -1677,7 +1676,7 @@ time2 = 0;
 resetEncoders();
 
 rtarget = double((theta/360) *2 * pi * radius);
-ltarget = double((theta / 360) * 2 * pi *(radius + 725)); 
+ltarget = double((theta / 360) * 2 * pi *(radius + 390)); 
 
 while (true){
 
@@ -1757,14 +1756,14 @@ int count = 0;
 bool over = false;
 resetEncoders();
 ltargetF = double(( theta/360) *2 * pi * radius);
-rtargetF = double((theta / 360) * 2 * pi *(radius + 725 ));
+rtargetF = double((theta / 360) * 2 * pi *(radius + 390 ));
 if(theta > 0){
 theta = theta + 45;
 } else {
     theta = theta - 45;
 }
 ltarget = double(( theta/360) *2 * pi * radius);
-rtarget = double((theta / 360) * 2 * pi *(radius + 725 ));
+rtarget = double((theta / 360) * 2 * pi *(radius + 390 ));
 while(true){
 
 if(trueTarget > 180){
@@ -1867,14 +1866,14 @@ int count = 0;
 int time2 = 0;
 resetEncoders();
 rtargetF = double((theta/360) *2 * pi * radius);
-ltargetF= double((theta / 360) * 2 * pi *(radius + 725)); 
+ltargetF= double((theta / 360) * 2 * pi *(radius + 390)); 
 if(theta > 0){
 theta = theta + 45;
 } else {
     theta = theta - 45;
 }
 rtarget = double((theta/360) *2 * pi * radius);
-ltarget = double((theta / 360) * 2 * pi *(radius + 725)); 
+ltarget = double((theta / 360) * 2 * pi *(radius + 390)); 
 
 while (true){
 
@@ -1976,6 +1975,6 @@ void wallResetF(int resetTime){
     }
 }
 
-void Rings(int motorVoltage){
-    Intake1.move(motorVoltage);
-}
+// void Rings(int motorVoltage){
+//     Intake1.move(motorVoltage);
+// }

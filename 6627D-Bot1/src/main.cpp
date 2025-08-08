@@ -5,6 +5,7 @@
 #include "robot.h"
 #include "auton.h"
 #include "field.h"
+#include "odom.h"
 lv_obj_t* Image2;
 bool stay_clamp = true;
 
@@ -108,7 +109,7 @@ while(true){
 
 void opcontrol() {
 
-
+setPosition(0,0,0);
 bool arcToggle = true;
 bool tankToggle=false;
 bool StakeWingToggle=false;
@@ -122,7 +123,7 @@ bool  IntakePiston = false;
 bool LBC = false;
 int Macro = 0;
 eyes.set_led_pwm(100);
-
+delay(3000);
 
 while (true) {
 
@@ -170,22 +171,25 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	MainIntake.move(0);
 }
 
-if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
-	driveTurn2(90);
+if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
+	driveArcLF(90, 500, 2000, 100);
+	driveStraight2(100);
 }
-//   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
-// 	IntakePiston = !IntakePiston;
-// 	 }
-//  Intake_Piston.set_value(IntakePiston);
+  if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
+	IntakePiston = !IntakePiston;
+	 }
+ Intake_Piston.set_value(IntakePiston);
+
+ Odometry();
 
 double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
-if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
-    con.print(0,0,"Error:%f       ", float(error));//viewTime
-} else if (time% 100 == 0 && time % 150 !=0){
-    con.print(1,0,"start?%f      ", double(imu.get_heading()));
-} else if (time % 150 == 0){
-    con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
-}
+// if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
+//     con.print(0,0,"XPos:%f       ", float(x_pos));//viewTime
+// } else if (time% 100 == 0 && time % 150 !=0){
+//     con.print(1,0,"Ypos%f      ", float(y_pos));
+// } else if (time % 150 == 0){
+//     con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
+// }
 
 delay(10);
 time += 10;

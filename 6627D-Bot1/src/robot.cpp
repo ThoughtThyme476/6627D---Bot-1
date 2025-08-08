@@ -10,14 +10,14 @@
 #define RF_PORT 4
 #define RM_PORT 1 
 #define RB_PORT 6 
-#define IMU_PORT 20
+#define IMU_PORT 19
 #define Intake1_port 8
-#define Intake2_PORT 11
+#define Intake2_PORT 21
 #define MainIntake_PORT 13
 #define OPTICAL_PORT 14
 #define DISTANCE_PORT 15
 #define DISTANCE_PORT2 16
-#define ROTATION_PORT 17
+#define ROTATION_PORT 11
 
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep

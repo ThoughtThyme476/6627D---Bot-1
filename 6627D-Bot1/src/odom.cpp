@@ -76,9 +76,9 @@ void Odometry(){
     prev_right_encoder_pos = right_encoder_pos;  
     prev_center_encoder_pos = center_encoder_pos;
 
-    left_encoder_pos = LF.get_position();
-    right_encoder_pos = RF.get_position();
-    center_encoder_pos = 0;
+    left_encoder_pos = (LF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
+    right_encoder_pos = (RF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
+    center_encoder_pos = (roto.get_angle()/36000.0)*(2*pi);
 
     delta_left_encoder_pos = left_encoder_pos - prev_left_encoder_pos;
     delta_right_encoder_pos = right_encoder_pos - prev_right_encoder_pos;
@@ -87,35 +87,45 @@ void Odometry(){
 
 
     phi = imu_pos - prev_imu_pos;
-
-    r0 = ((delta_left_encoder_pos + delta_right_encoder_pos) / 2) / phi;
-    r1 = delta_center_encoder_pos/phi;
-
-
-    if (phi < IMU_THERSHOLD){
-        localX = (delta_left_encoder_pos + delta_right_encoder_pos) / 2;
-        localY = delta_center_encoder_pos - FORWARD_OFFSET * ((pi*phi)/180);
-    } else {
-        localX = r0*sin((pi*phi)/180) - r1*(1-cos((pi*phi)/180));
-        localY = r1*sin((pi*phi)/180) + r0*(1-cos((phi*pi)/180));
-    }
+    const double dtheta_rad = (pi * phi) / 180.00;
+    const double th_rad = (pi * imu_pos) / 180.00;
+    const double EPS = (pi * IMU_THERSHOLD)/ 180.0;
 
 
-    deltaY = localX * cos((pi * imu_pos)/180) - localY * sin((pi * imu_pos)/180);
-    deltaX = localX * sin((pi * imu_pos)/180) + localY * sin((pi * imu_pos)/180);
+ if (fabs(dtheta_rad) < EPS) {
+          // straight-ish: use linearized form
+          localX = (delta_left_encoder_pos + delta_right_encoder_pos) / 2.0;
+          // NOTE: dtheta now radians
+          localY = delta_center_encoder_pos - FORWARD_OFFSET * dtheta_rad;
+        } else {
+          // turning: use exact arc formulas (use radians!)
+          const double avg_lr = (delta_left_encoder_pos + delta_right_encoder_pos) / 2.0;
+          r0 = avg_lr / dtheta_rad;                    // forward radius
+          r1 =  (delta_center_encoder_pos) / dtheta_rad; // lateral radius
 
-    x_pos += deltaX;
-    y_pos += deltaY;
+          const double s = sin(dtheta_rad);
+          const double c = cos(dtheta_rad);
 
-    if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0){
-        con.print(0, 0, "x_pos: %f          ", float(x_pos));
-    } else if(odo_time % 100 == 0 && odo_time % 150 != 0){
-       con.print(1, 0, "y_pos: %f              ", float(y_pos));
-    } else if(odo_time % 150 == 0){
-        con.print(2, 0, "Phi: %f               ", float(phi));
-    }
+          localX = r0 * s - r1 * (1.0 - c);
+          localY = r1 * s + r0 * (1.0 - c);
+        }
 
-    odo_time += 10; 
+        // rotate into global frame using absolute heading (radians)
+        deltaY =  localX * cos(th_rad) - localY * sin(th_rad);
+        deltaX =  localX * sin(th_rad) + localY * cos(th_rad);
+
+        x_pos += deltaX;
+        y_pos += deltaY;
+
+        if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0){
+          con.print(0, 0, "x_pos: %f           ", float(x_pos));
+        } else if (odo_time % 100 == 0 && odo_time % 150 != 0){
+          con.print(1, 0, "y_pos: %f           ", float(y_pos));
+        } else if (odo_time % 150 == 0){
+          con.print(2, 0, "Pos: %f        ", float(position)); // FYI: 'position' never updates
+        }
+
+        odo_time += 10; // assumes caller delays ~10ms per loop
 }
 
 
@@ -129,9 +139,9 @@ void Odometry2(){
     prev_right_encoder_pos = right_encoder_pos;
     prev_center_encoder_pos = center_encoder_pos;
 
-    left_encoder_pos = LF.get_position(); //just set this to zero.
-    right_encoder_pos = RF.get_position();//use this one for ododm configuration
-    center_encoder_pos = 0; // use the side to side tracking wheel and get the position here.
+    left_encoder_pos = (LF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
+    right_encoder_pos = (RF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
+    center_encoder_pos = (roto.get_angle()/36000.0)*(2*pi); // use the side to side tracking wheel and get the position here.
     
 //just comment the above lines (left and right encoder setting lines), and uncomment below     
 
@@ -172,9 +182,9 @@ void Odometry2(){
     y_pos += deltaY;
 
       if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150!= 0) {
-        con.print(0,0, "x_pos: %f               ", float(x_pos));
+        con.print(0,0, "LE pos: %f               ", float(x_pos));
       } else if (odo_time % 100 == 0 && odo_time % 150 != 0) {
-        con.print (1,0, "y_pos: %f              ", float(y_pos));
+        con.print (1,0, "RE pos: %f              ", float(y_pos));
       } else if (odo_time % 150 == 0) {
         con.print(2,0, "Pos: %f                ", float(phi));
       }

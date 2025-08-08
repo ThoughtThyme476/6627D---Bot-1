@@ -83,11 +83,11 @@ extern int viewTime;
 #define HEADING_INTEGRAL_KI 0
 
 //arc turn stuff
-#define ARC_HEADING_KP 1 //make it bigger untill u can see it correcting along the path // 40
+#define ARC_HEADING_KP 18 //make it bigger until u can see it correcting along the path 
 #define ARC_HEADING_KI 0
-#define ARC_HEADING_KD 0 // make it bigger untill it is smooth //18
+#define ARC_HEADING_KD 10 // make it bigger until it is smooth //18
 #define ARC_HEADING_MAX_INTEGRAL 0
-#define ARC_HEADING_INTEGRAL_KI 0 // to- do list, tune 
+#define ARC_HEADING_INTEGRAL_KI 0 
 
 #define MACRO_KP 1
 #define MACRO_KI 0

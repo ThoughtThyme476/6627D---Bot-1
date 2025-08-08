@@ -7,8 +7,7 @@
 #define FORWARD_OFFSET 0
 #define IMU_THERSHOLD 0.0001
 #define HEADING_CUTOFF 0.0001745329
-#define SIDEWAYS_OFFEST 0.6
-
+#define SIDEWAYS_OFFEST 5.5
 extern void Odometry();
 extern void Odometry2();
 extern void driveToPoint(double xTarget, double yTarget, double preferredHeading);
