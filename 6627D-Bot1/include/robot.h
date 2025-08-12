@@ -24,8 +24,8 @@ extern pros::Distance dist_right;
 extern pros::Controller con;
 
 
-extern pros::ADIDigitalOut MogoMech;
-extern pros::ADIDigitalOut StakeWing;
+extern pros::ADIDigitalOut MiddleHood;
+extern pros::ADIDigitalOut Basket;
 extern pros::ADIDigitalOut Intake_Piston;
 extern pros::ADIDigitalIn selec;
 

@@ -12,7 +12,7 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 0;
+int atn = 1;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
@@ -120,6 +120,8 @@ bool  hooks_Macro_Rev = false;
 bool fishy_macro = false;
 bool return_fishmech = false;
 bool  IntakePiston = false;
+bool MidHood = false;
+bool basket = false;
 bool LBC = false;
 int Macro = 0;
 eyes.set_led_pwm(100);
@@ -180,16 +182,26 @@ if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	 }
  Intake_Piston.set_value(IntakePiston);
 
+   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_Y)) {
+	MidHood = !MidHood;
+	 }
+ MiddleHood.set_value(MidHood);
+
+   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)) {
+	basket = !basket;
+	 }
+ Basket.set_value(basket);
+
  Odometry();
 
 double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
-// if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
-//     con.print(0,0,"XPos:%f       ", float(x_pos));//viewTime
-// } else if (time% 100 == 0 && time % 150 !=0){
-//     con.print(1,0,"Ypos%f      ", float(y_pos));
-// } else if (time % 150 == 0){
-//     con.print(2,0,"C:%i H:%i LB:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
-// }
+if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
+    con.print(0,0,"XPos:%f       ", float(x_pos));//viewTime
+} else if (time% 100 == 0 && time % 150 !=0){
+    con.print(1,0,"Ypos%f      ", float(y_pos));
+} else if (time % 150 == 0){
+    con.print(2,0,"C:%i I:%i I2:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
+}
 
 delay(10);
 time += 10;

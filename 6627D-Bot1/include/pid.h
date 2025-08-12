@@ -42,7 +42,8 @@ extern void driveSortHoldblueC(int target, int speed);
 extern void WallStakePos(int speed, int SlowSense);
 extern void RingHold(int speed);
 extern void driveTurnT(int target);
-
+extern void wallResetF(int resetTime);
+extern void wallResetB(int resetTime);
 
 extern int color;
 extern bool InitColor;
