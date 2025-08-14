@@ -27,6 +27,7 @@ extern pros::Controller con;
 extern pros::ADIDigitalOut MiddleHood;
 extern pros::ADIDigitalOut Basket;
 extern pros::ADIDigitalOut Intake_Piston;
+extern pros::ADIDigitalOut TopHood;
 extern pros::ADIDigitalIn selec;
 
 #endif

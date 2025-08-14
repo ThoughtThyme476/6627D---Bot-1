@@ -38,8 +38,8 @@ pros::Distance dist_left (DISTANCE_PORT);
 pros::Distance dist_right (DISTANCE_PORT2);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
 
-
+pros::ADIDigitalOut Intake_Piston ('A',false);
 pros::ADIDigitalOut MiddleHood ('B',false);//out soloniod was stolen so I changed this
 pros::ADIDigitalOut Basket('C',false);
-pros::ADIDigitalOut Intake_Piston ('A',false);
-pros::ADIDigitalIn selec ('D');//
+pros::ADIDigitalOut TopHood('D', false);
+pros::ADIDigitalIn selec ('E');//

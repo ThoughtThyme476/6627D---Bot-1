@@ -122,6 +122,7 @@ bool return_fishmech = false;
 bool  IntakePiston = false;
 bool MidHood = false;
 bool basket = false;
+bool Tophood = false;
 bool LBC = false;
 int Macro = 0;
 eyes.set_led_pwm(100);
@@ -173,10 +174,10 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	MainIntake.move(0);
 }
 
-if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	driveArcLF(90, 500, 2000, 100);
-	driveStraight2(100);
-}
+// if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
+// 	driveArcLF(90, 500, 2000, 100);
+// 	driveStraight2(100);
+// }
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;
 	 }
@@ -192,6 +193,12 @@ if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	 }
  Basket.set_value(basket);
 
+  if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_RIGHT)) {
+	Tophood = !Tophood;
+	 }
+ TopHood.set_value(Tophood);
+
+ //printing stuff
  Odometry();
 
 double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
