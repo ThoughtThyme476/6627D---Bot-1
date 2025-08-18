@@ -17,7 +17,7 @@
 #define OPTICAL_PORT 14
 #define DISTANCE_PORT 15
 #define DISTANCE_PORT2 16
-#define ROTATION_PORT 11
+#define ROTATION_PORT 12
 
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
@@ -42,4 +42,4 @@ pros::ADIDigitalOut Intake_Piston ('A',false);
 pros::ADIDigitalOut MiddleHood ('B',false);//out soloniod was stolen so I changed this
 pros::ADIDigitalOut Basket('C',false);
 pros::ADIDigitalOut TopHood('D', false);
-pros::ADIDigitalIn selec ('E');//
+pros::ADIDigitalIn selec ('E');

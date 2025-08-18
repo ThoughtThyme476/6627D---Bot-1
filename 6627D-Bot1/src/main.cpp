@@ -6,6 +6,8 @@
 #include "auton.h"
 #include "field.h"
 #include "odom.h"
+#include "pure_pursuit.h"
+
 lv_obj_t* Image2;
 bool stay_clamp = true;
 
@@ -174,10 +176,10 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	MainIntake.move(0);
 }
 
-// if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-// 	driveArcLF(90, 500, 2000, 100);
-// 	driveStraight2(100);
-// }
+if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
+	delay(3000);
+	boomerang(5, 5);
+}
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;
 	 }

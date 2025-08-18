@@ -8,9 +8,7 @@
 #define PUREH
 
 
-extern void purePursuitController();
-extern void initializePath();
-extern void initializePathDistances();
+extern void goTo(double targetX, double targetY, double targetHeadingDeg);
 
 
 #endif
