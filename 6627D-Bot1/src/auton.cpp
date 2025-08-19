@@ -13,37 +13,38 @@
  void Standard_AWP_red(){
   driveStraight2(1200);
   driveTurn2(-90);
+  TopHood.set_value(true);
+  driveStraight2(1000);
   Intake_Piston.set_value(true);
   Intake1.move(-127);
 	Intake2.move(127);
 	MainIntake.move(-127);
-  //MiddleHood down
-  driveStraightSlow(200, 50);
-  wallResetF(5);
-  //MiddleHood up
-  driveStraightSlow(-50, 40);
+  wallResetF(500);
+  driveStraightSlow(-200, 50);
   driveStraight2(-200);
   driveTurn2(90);
   Intake1.move(0);
 	Intake2.move(0);
 	MainIntake.move(0);
+  TopHood.set_value(false);
   Intake_Piston.set_value(false);
-  driveStraight2(875);
-  //put hood into long goal mode
-  //driveStraightSlow(50, 15);
-  delay(2000);
-  driveStraightC(-300);
-  driveTurn2(150);
-  driveStraight2(650);
-  Intake1.move(-127);
-	Intake2.move(127);
-	MainIntake.move(-127);
-  driveArcLF(60, 500, 1000, 25);
-  driveArcRF(35, 550, 1000, 50);
-  Intake1.move(0);
-	Intake2.move(0);
-	MainIntake.move(0);
-  driveStraight2(400);
+  driveStraight2(1000);
+  // driveStraight2(875);
+  // //put hood into long goal mode
+  // //driveStraightSlow(50, 15);
+  // delay(2000);
+  // driveStraightC(-300);
+  // driveTurn2(150);
+  // driveStraight2(650);
+  // Intake1.move(-127);
+	// Intake2.move(127);
+	// MainIntake.move(-127);
+  // driveArcLF(60, 500, 1000, 25);
+  // driveArcRF(35, 550, 1000, 50);
+  // Intake1.move(0);
+	// Intake2.move(0);
+	// MainIntake.move(0);
+  // driveStraight2(400);
  
   
  }

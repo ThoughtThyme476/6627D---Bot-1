@@ -134,7 +134,7 @@ void Odometry2() {
     // --- Constants ---
     constexpr double TICKS_PER_REV_MOTOR = 360.0;   // motor reports in degrees
     constexpr double TICKS_PER_REV_ROTO  = 36000.0; // rotation sensor reports centidegrees
-    constexpr double WHEEL_RADIUS_X = 1.625;        // drive wheel radius (forward movement) [inches]
+    constexpr double WHEEL_RADIUS_X = 3.25;        // drive wheel radius (forward movement) [inches]
     constexpr double WHEEL_RADIUS_Y = 2.0;          // tracking wheel radius (lateral movement) [inches]
     constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
     constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio

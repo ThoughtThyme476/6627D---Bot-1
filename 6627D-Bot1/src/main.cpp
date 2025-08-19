@@ -177,8 +177,10 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 }
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
+	setPosition(0,0,0);
 	delay(3000);
-	boomerang(5, 5);
+	initializePath();
+	purePursuitController();
 }
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;

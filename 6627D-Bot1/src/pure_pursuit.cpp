@@ -14,6 +14,7 @@
 using namespace std;
 using namespace pros;
 
+
 // Define a struct for points
 struct Point {
     double x;
@@ -30,22 +31,45 @@ struct Intersection {
 // Global variables
 vector<Point> path;
 vector<double> pathDistances;
-double lookaheadDistance = 220.0; // mm
-double robotVelocity = 100.0;     // desired speed (arbitrary units)
-double wheelbase = 390.0;         // mm between wheels
-double speedLimit = 1.0;          // fraction [0..1] global speed limiter (set to 0.75 for 75%)
-double goalTolerance = 10.0;      // mm, stop distance to target
-double waypointTolerance = 10.0;  // mm, waypoint acceptance
+double lookaheadDistance = 100.0; // Adjust as needed (in mm)
+double robotVelocity = 100.0;     // Desired robot velocity (in voltage)
+double wheelbase = 390.0;         // Distance between left and right wheels (in encoder_units)
 
-// Function to initialize the path (for testing/demo)
-// void initializePath() {
-//     path.clear();
-//     path.push_back({0, 0});
-//     path.push_back({500, 500});
-//     path.push_back({1000, 1000});
-//     path.push_back({0, 1000});
-//     path.push_back({0, 0});
-// }
+volatile uint32_t control_heartbeat = 0; // incremented by main control loop
+
+static void watchdog_task_fn(void*){
+    const uint32_t STALL_MS = 200; // if no heartbeat in this window -> stop motors
+    uint32_t last = control_heartbeat;
+    while (true) {
+        delay(50);
+        if (control_heartbeat == last) {
+            // heartbeat stalled -> cut motors
+            LF.move(0); LM.move(0); LB.move(0);
+            RF.move(0); RM.move(0); RB.move(0);
+            // optionally blink LCD / LED and block until human reset
+        } else {
+            last = control_heartbeat;
+        }
+    }
+}
+
+// call once at startup (e.g. in initialize())
+void start_watchdog() {
+    Task watchdog_task(watchdog_task_fn, (void*)nullptr, TASK_PRIORITY_DEFAULT);
+}
+
+// Function to initialize the path
+void initializePath() {
+    // Define your path here
+    path.clear();
+    path.push_back({0, 0});
+    path.push_back({500, 500});
+    path.push_back({1000, 1000});
+    path.push_back({0, 0});
+
+    // Recompute pathDistances any time the path changes
+    initializePathDistances();
+}
 
 // Function to precompute distances along the path
 void initializePathDistances() {
@@ -58,6 +82,8 @@ void initializePathDistances() {
         pathDistances.push_back(pathDistances.back() + dist);
     }
 }
+
+
 
 // Function to compute circle-line intersections
 vector<Intersection> getCircleLineIntersections(double r, Point center, Point p1, Point p2, size_t segmentIndex) {
@@ -74,44 +100,69 @@ vector<Intersection> getCircleLineIntersections(double r, Point center, Point p1
     double c = fx * fx + fy * fy - r * r;
 
     double discriminant = b * b - 4 * a * c;
+
     if (discriminant < 0) {
-        return result; // no intersection
+        return result; // No intersection
     }
 
     discriminant = sqrt(discriminant);
+
     double t1 = (-b - discriminant) / (2 * a);
     double t2 = (-b + discriminant) / (2 * a);
 
     if (t1 >= 0 && t1 <= 1) {
-        Point intersection{p1.x + t1 * dx, p1.y + t1 * dy};
+        Point intersection;
+        intersection.x = p1.x + t1 * dx;
+        intersection.y = p1.y + t1 * dy;
         result.push_back({intersection, segmentIndex, t1});
     }
+
     if (t2 >= 0 && t2 <= 1) {
-        Point intersection{p1.x + t2 * dx, p1.y + t2 * dy};
+        Point intersection;
+        intersection.x = p1.x + t2 * dx;
+        intersection.y = p1.y + t2 * dy;
         result.push_back({intersection, segmentIndex, t2});
     }
+
     return result;
 }
 
 // Function to find the goal point
 Point findGoalPoint(Point robotPosition, double lookaheadDistance) {
-    vector<Intersection> intersections;
+    // safety guards
+    if (path.size() < 2) {
+        // nothing to follow, return robot position or last point
+        if (!path.empty()) return path.back();
+        return robotPosition;
+    }
+    if (pathDistances.size() != path.size()) {
+        initializePathDistances();
+    }
 
-    // find all intersections between lookahead circle and path
+    vector<Intersection> intersections;
+    // Find all intersections between the lookahead circle and path segments
     for (size_t i = 0; i < path.size() - 1; i++) {
         Point start = path[i];
         Point end = path[i + 1];
-        vector<Intersection> points = getCircleLineIntersections(lookaheadDistance, robotPosition, start, end, i);
+
+        vector<Intersection> points = getCircleLineIntersections(
+            lookaheadDistance, robotPosition, start, end, i);
+
         intersections.insert(intersections.end(), points.begin(), points.end());
     }
 
-    // choose the one furthest along the path
+    // if no intersections, return last path point (safe)
+    if (intersections.empty()) return path.back();
+
+    // Select the intersection point that is the furthest along the path
     double maxProgress = -1;
     Intersection bestIntersection;
-    for (const auto &inter : intersections) {
+
+    for (const auto& inter : intersections) {
         double segmentStartDistance = pathDistances[inter.segmentIndex];
         double segmentLength = pathDistances[inter.segmentIndex + 1] - segmentStartDistance;
         double progress = segmentStartDistance + inter.t * segmentLength;
+
         if (progress > maxProgress) {
             maxProgress = progress;
             bestIntersection = inter;
@@ -121,221 +172,105 @@ Point findGoalPoint(Point robotPosition, double lookaheadDistance) {
     if (maxProgress >= 0) {
         return bestIntersection.point;
     } else {
+        // No valid intersection found; return the last point in the path
         return path.back();
     }
 }
 
-// Function to compute curvature
+// Function to compute the curvature
 double computeCurvature(Point robotPosition, double robotHeading, Point goalPoint, double lookaheadDistance) {
+    if (lookaheadDistance <= 0) return 0.0;
+
     double dx = goalPoint.x - robotPosition.x;
     double dy = goalPoint.y - robotPosition.y;
 
-    // Transform to robot frame
-    double x = cos(robotHeading) * dx + sin(robotHeading) * dy;
-    double y = -sin(robotHeading) * dx + cos(robotHeading) * dy;
+    // Transform the goal point to the robot's coordinate frame
+    double x = cos(robotHeading) * dx + sin(robotHeading) * dy;   // forward
+    double y = -sin(robotHeading) * dx + cos(robotHeading) * dy;  // lateral (to robot's left)
 
-    if (fabs(lookaheadDistance) < 1e-6) return 0.0;
+    // Use lateral offset (y) for pure-pursuit curvature: k = 2*y / L^2
+    if (fabs(y) < 1e-6) {
+        return 0.0;
+    }
 
-    // Correct pure pursuit curvature formula
     double curvature = (2.0 * y) / (lookaheadDistance * lookaheadDistance);
+
     return curvature;
 }
 
-// Function to compute wheel speeds
-void computeWheelSpeeds(double curvature, double &leftSpeed, double &rightSpeed) {
+// Function to compute wheel speeds based on curvature
+void computeWheelSpeeds(double curvature, double& leftSpeed, double& rightSpeed) {
     leftSpeed = robotVelocity * (1.0 - (curvature * wheelbase / 2.0));
     rightSpeed = robotVelocity * (1.0 + (curvature * wheelbase / 2.0));
 }
 
-// Function to set motor speeds (scaled to PROS move range)
+// Function to set motor speeds
 void setMotorSpeeds(double leftSpeed, double rightSpeed) {
-    const double MAX_CMD = 127.0;
-
-    // apply user speed limiter first (preserves left/right ratio)
-    leftSpeed  *= speedLimit;
-    rightSpeed *= speedLimit;
-
-    // find the largest magnitude among desired speeds (after limiter)
-    double maxAbs = std::max(fabs(leftSpeed), fabs(rightSpeed));
-    double scale = 1.0;
-    if (maxAbs > MAX_CMD) {
-        scale = MAX_CMD / maxAbs; // scale down only if needed to fit motor command range
+    // safety: reject NaN/inf and extreme values
+    if (!std::isfinite(leftSpeed) || !std::isfinite(rightSpeed)) {
+        LF.move(0); LM.move(0); LB.move(0);
+        RF.move(0); RM.move(0); RB.move(0);
+        return;
     }
 
-    double leftCmd  = leftSpeed * scale;
-    double rightCmd = rightSpeed * scale;
+    // clamp linear speeds to some sane mm/s range before converting
+    const double MAX_WHEEL_MM_S = 3000.0; // tune for your robot
+    leftSpeed  = std::max(std::min(leftSpeed,  MAX_WHEEL_MM_S), -MAX_WHEEL_MM_S);
+    rightSpeed = std::max(std::min(rightSpeed, MAX_WHEEL_MM_S), -MAX_WHEEL_MM_S);
 
-    // safety clamp to [-127,127]
-    leftCmd  = std::max(std::min(leftCmd,  MAX_CMD), -MAX_CMD);
-    rightCmd = std::max(std::min(rightCmd, MAX_CMD), -MAX_CMD);
+    const double wheelCircumference = 3.25 * 25.4 * M_PI; // mm per wheel rev
+    const double gearMotorToWheel = 36.0/48.0;            // same convention as Odometry2 (motor->wheel)
+    const double maxMotorRPM = 600.0;
 
-    LF.move(leftCmd);
-    LM.move(leftCmd);
-    LB.move(leftCmd);
-    RF.move(rightCmd);
-    RM.move(rightCmd);
-    RB.move(rightCmd);
+    // wheel RPM from mm/s
+    double leftWheelRPM  = (leftSpeed  / wheelCircumference) * 60.0;
+    double rightWheelRPM = (rightSpeed / wheelCircumference) * 60.0;
+
+    // convert wheel RPM -> motor RPM (motorRPM = wheelRPM / gearMotorToWheel)
+    double leftMotorRPM  = leftWheelRPM  / gearMotorToWheel;
+    double rightMotorRPM = rightWheelRPM / gearMotorToWheel;
+
+    // clamp to motor capability
+    leftMotorRPM  = std::max(std::min(leftMotorRPM,  maxMotorRPM), -maxMotorRPM);
+    rightMotorRPM = std::max(std::min(rightMotorRPM, maxMotorRPM), -maxMotorRPM);
+
+    LF.move_velocity(leftMotorRPM);
+    LM.move_velocity(leftMotorRPM);
+    LB.move_velocity(leftMotorRPM);
+    RF.move_velocity(rightMotorRPM);
+    RM.move_velocity(rightMotorRPM);
+    RB.move_velocity(rightMotorRPM);
+
 }
 
-// Pure Pursuit loop (used internally by goTo)
-void purePursuitController(double targetX, double targetY) {
+// The main Pure Pursuit controller loop
+void purePursuitController() {
     while (true) {
+        control_heartbeat++; // keep watchdog happy
         Odometry2();
-
+        // Get robot's current position and heading
         double robotX = x_pos;
         double robotY = y_pos;
-        double robotHeading = imu.get_rotation(); // degrees, same as Odometry2 uses
-        if (robotHeading > 180) robotHeading -= 360;
-        if (robotHeading < -180) robotHeading += 360;
-        robotHeading = robotHeading * M_PI / 180.0; // convert to radians
+        double robotHeading = imu.get_heading() * M_PI / 180.0; /// In radians
+
         Point robotPosition = {robotX, robotY};
 
-        // stop when close to target
-        if (hypot(robotX - targetX, robotY - targetY) < goalTolerance) {
-            setMotorSpeeds(0, 0);
-            break;
-        }
-
+        // Find the goal point
         Point goalPoint = findGoalPoint(robotPosition, lookaheadDistance);
+
+        // Compute the curvature
         double curvature = computeCurvature(robotPosition, robotHeading, goalPoint, lookaheadDistance);
 
-        // small heading correction toward the line-to-goal direction
-        double targetHeading = atan2(targetY - robotY, targetX - robotX); // radians
-        double headingError = targetHeading - robotHeading;
-        while (headingError > M_PI)  headingError -= 2*M_PI;
-        while (headingError < -M_PI) headingError += 2*M_PI;
-        curvature += headingError * 0.01; // reduce gain if overcorrection
-
+        // Compute wheel speeds
         double leftSpeed, rightSpeed;
         computeWheelSpeeds(curvature, leftSpeed, rightSpeed);
+
+    
         setMotorSpeeds(leftSpeed, rightSpeed);
 
         delay(10);
     }
 }
 
-// Rotate in place to target heading
-void rotateToHeading(double targetHeadingDeg) {
-    double kP = 2.0; // tuning gain
-    while (true) {
-        double error = targetHeadingDeg - imu.get_heading();
-        // normalize error to [-180, 180]
-        while (error > 180) error -= 360;
-        while (error < -180) error += 360;
 
-        if (fabs(error) < 5.0) break; // looser tolerance (was 2.0)
-
-        double turn = kP * error;
-        turn = std::max(std::min(turn, 127.0), -127.0);
-
-        LF.move(-turn); LM.move(-turn); LB.move(-turn);
-        RF.move(turn);  RM.move(turn);  RB.move(turn);
-
-        delay(20);
-    }
-    setMotorSpeeds(0, 0);
-}
-
-// Build path to target point
-void setPathToTarget(double targetX, double targetY) {
-    path.clear();
-    path.push_back({x_pos, y_pos}); // start at current odometry
-    path.push_back({targetX, targetY});
-    initializePathDistances();
-}
-
-// Public command: drive to (x,y) then rotate to heading
-void goTo(double targetX, double targetY, double targetHeadingDeg) {
-    setPathToTarget(targetX, targetY);
-    purePursuitController(targetX, targetY);
-    rotateToHeading(targetHeadingDeg);
-}
-
-struct Waypoint {
-    double x;
-    double y;
-    double headingDeg; // Desired heading at this point
-};
-
-bool stopPP = false;
-pros::Task* ppTask = nullptr; // handle to the Pure Pursuit task
-
-// Pure pursuit task function
-void purePursuitTask(void* param) {
-    auto* waypoints = static_cast<std::vector<Waypoint>*>(param);
-    int currentIndex = 0;
-
-    while (!stopPP && currentIndex < waypoints->size()) {
-        Odometry2();
-
-        double robotX = x_pos;
-        double robotY = y_pos;
-        double robotHeading = imu.get_rotation() * M_PI / 180.0;
-
-        Point robotPosition = {robotX, robotY};
-        Point goalPoint = findGoalPoint(robotPosition, lookaheadDistance);
-
-        // Heading correction
-        double targetHeading = (*waypoints)[currentIndex].headingDeg * M_PI / 180.0;
-        double headingError = targetHeading - robotHeading;
-
-        while (headingError > M_PI)  headingError -= 2*M_PI;
-        while (headingError < -M_PI) headingError += 2*M_PI;
-
-        double curvature = computeCurvature(robotPosition, robotHeading, goalPoint, lookaheadDistance);
-        curvature += headingError * 0.02; // small heading correction gain
-
-        double leftSpeed, rightSpeed;
-        computeWheelSpeeds(curvature, leftSpeed, rightSpeed);
-        setMotorSpeeds(leftSpeed, rightSpeed);
-
-        // Check proximity to current waypoint
-        double dx = (*waypoints)[currentIndex].x - x_pos;
-        double dy = (*waypoints)[currentIndex].y - y_pos;
-        double dist = sqrt(dx*dx + dy*dy);
-
-        if (dist < waypointTolerance) {
-            currentIndex++;
-        }
-
-        pros::delay(10);
-    }
-
-    // Stop motors at the end
-    LF.move(0); LM.move(0); LB.move(0);
-    RF.move(0); RM.move(0); RB.move(0);
-
-    stopPP = true;
-    delete (std::vector<Waypoint>*)param; // free allocated memory
-}
-
-// Start a Pure Pursuit run
-void followPath(const std::vector<Waypoint>& waypoints) {
-    if (waypoints.empty()) return;
-
-    // Reset path
-    path.clear();
-    path.push_back({x_pos, y_pos});
-    for (const auto& wp : waypoints) {
-        path.push_back({wp.x, wp.y});
-    }
-    initializePathDistances();
-
-    stopPP = false;
-
-    // Copy waypoints to heap so task can access them
-    auto* waypointsCopy = new std::vector<Waypoint>(waypoints);
-
-    // Kill old task if still running
-   if (ppTask != nullptr) {
-    stopPP = true;
-    pros::delay(20);
-    ppTask->remove();
-    delete ppTask;
-    ppTask = nullptr;
-}
-
-    // Start a new PROS task
-    ppTask = new pros::Task(purePursuitTask, waypointsCopy, "PurePursuitTask");
-}
-
+//add motion tracking

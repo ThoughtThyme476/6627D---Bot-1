@@ -40,6 +40,6 @@ pros::Controller con (pros::E_CONTROLLER_MASTER);
 
 pros::ADIDigitalOut Intake_Piston ('A',false);
 pros::ADIDigitalOut MiddleHood ('B',false);//out soloniod was stolen so I changed this
-pros::ADIDigitalOut Basket('C',false);
+pros::ADIDigitalOut Basket('C',true);
 pros::ADIDigitalOut TopHood('D', false);
 pros::ADIDigitalIn selec ('E');
