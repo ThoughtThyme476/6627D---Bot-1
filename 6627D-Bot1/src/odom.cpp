@@ -82,7 +82,7 @@ void Odometry(){
 
     delta_left_encoder_pos = left_encoder_pos - prev_left_encoder_pos;
     delta_right_encoder_pos = right_encoder_pos - prev_right_encoder_pos;
-    delta_right_encoder_pos = center_encoder_pos - prev_center_encoder_pos;
+    delta_center_encoder_pos = center_encoder_pos - prev_center_encoder_pos;
 
 
 
@@ -132,13 +132,16 @@ void Odometry(){
 
 void Odometry2() {
     // --- Constants ---
-    constexpr double TICKS_PER_REV_MOTOR = 360.0;   // motor reports in degrees
+    constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
     constexpr double TICKS_PER_REV_ROTO  = 36000.0; // rotation sensor reports centidegrees
-    constexpr double WHEEL_RADIUS_X = 3.25;        // drive wheel radius (forward movement) [inches]
-    constexpr double WHEEL_RADIUS_Y = 2.0;          // tracking wheel radius (lateral movement) [inches]
+    constexpr double WHEEL_RADIUS_X_IN   = 3.25;    // drive wheel radius (forward movement) [inches]
+    constexpr double WHEEL_RADIUS_Y_IN   = 2.0;     // tracking wheel radius (lateral movement) [inches]
     constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
     constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
     constexpr double INCH_TO_MM = 25.4;
+
+    const double WHEEL_RADIUS_X_MM = WHEEL_RADIUS_X_IN * INCH_TO_MM;
+    const double WHEEL_RADIUS_Y_MM = WHEEL_RADIUS_Y_IN * INCH_TO_MM;
 
     const double DEG2RAD = pi / 180.0;
     const double THRESH  = IMU_THERSHOLD * DEG2RAD;
@@ -152,7 +155,7 @@ void Odometry2() {
     if (imu_pos > 180) imu_pos -= 360;
     if (imu_pos < -180) imu_pos += 360;
 
-    // --- Save old encoder state ---
+    // --- Save old encoder states ---
     prev_left_encoder_pos   = left_encoder_pos;
     prev_right_encoder_pos  = right_encoder_pos;
 
@@ -161,21 +164,21 @@ void Odometry2() {
     double right_rev = (RF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
     double revX      = (left_rev + right_rev) / 2.0;  // average L+R
 
-    left_encoder_pos  = revX * (2.0 * pi * WHEEL_RADIUS_X) * INCH_TO_MM; // mm
+    // convert to mm
+    left_encoder_pos  = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
 
     // --- Lateral distance from tracking wheel (roto) ---
     double revY = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y;
-    right_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y) * INCH_TO_MM; // mm
+    right_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
 
-    // --- Delta wheel displacements ---
+    // --- Delta wheel displacements (mm) ---
     double dXwheel = left_encoder_pos  - prev_left_encoder_pos;
     double dYwheel = right_encoder_pos - prev_right_encoder_pos;
 
-    // --- Heading change ---
-    phi = imu_pos - prev_imu_pos;   // Δheading in degrees
-    phi = phi * DEG2RAD;            // to radians
+    // --- Heading change (radians) ---
+    phi = (imu_pos - prev_imu_pos) * DEG2RAD;
 
-    // --- Local displacement (robot frame) ---
+    // --- Local displacement (robot frame, mm) ---
     double localX, localY;
     if (fabs(phi) < THRESH) {
         localX = dXwheel + FORWARD_OFFSET  * phi;
@@ -186,25 +189,26 @@ void Odometry2() {
         localY = s * ((dYwheel / phi) + SIDEWAYS_OFFSET);
     }
 
-    // --- Transform into global frame ---
+    // --- Transform into global frame (mm) ---
     double theta_mid = (prev_imu_pos * DEG2RAD) + (phi / 2.0);
     double dx = localX * cos(theta_mid) - localY * sin(theta_mid);
     double dy = localX * sin(theta_mid) + localY * cos(theta_mid);
 
-    x_pos += dx;
-    y_pos += dy;
+    x_pos += dx; // mm
+    y_pos += dy; // mm
 
-    // --- Debug printing ---
+    // --- Debug printing (mm + heading in both units) ---
     if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0) {
         con.print(0,0, "X pos: %.1f mm     ", float(x_pos));
     } else if (odo_time % 100 == 0 && odo_time % 150 != 0) {
         con.print(1,0, "Y pos: %.1f mm     ", float(y_pos));
     } else if (odo_time % 150 == 0) {
-        con.print(2,0, "Heading: %.2f rad ", float(imu_pos_radians));
+        con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
     }
 
     odo_time += 10;
 }
+
 
 
 

@@ -4,20 +4,20 @@
 
 //header Guards, safety
 
-#define LF_PORT 7
-#define LM_PORT 5 
-#define LB_PORT 3 
-#define RF_PORT 4
-#define RM_PORT 1 
-#define RB_PORT 6 
-#define IMU_PORT 19
-#define Intake1_port 8
-#define Intake2_PORT 21
-#define MainIntake_PORT 13
+#define LF_PORT 14
+#define LM_PORT 11 
+#define LB_PORT 13 
+#define RF_PORT 2
+#define RM_PORT 18 
+#define RB_PORT 20 
+#define IMU_PORT 3
+#define Intake1_port 12
+#define Intake2_PORT 19
+#define MainIntake_PORT 16
 #define OPTICAL_PORT 14
 #define DISTANCE_PORT 15
 #define DISTANCE_PORT2 16
-#define ROTATION_PORT 12
+#define ROTATION_PORT 17
 
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
@@ -38,8 +38,8 @@ pros::Distance dist_left (DISTANCE_PORT);
 pros::Distance dist_right (DISTANCE_PORT2);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
 
-pros::ADIDigitalOut Intake_Piston ('A',false);
-pros::ADIDigitalOut MiddleHood ('B',false);//out soloniod was stolen so I changed this
-pros::ADIDigitalOut Basket('C',true);
-pros::ADIDigitalOut TopHood('D', false);
-pros::ADIDigitalIn selec ('E');
+pros::ADIDigitalOut Intake_Piston ('D',false);
+pros::ADIDigitalOut MiddleHood ('A',false);//out soloniod was stolen so I changed this
+pros::ADIDigitalOut Basket('B',true);
+pros::ADIDigitalOut TopHood('E', false);
+pros::ADIDigitalIn selec ('H');

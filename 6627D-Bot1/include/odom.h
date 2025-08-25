@@ -16,6 +16,8 @@ extern void setPosition(float xcoord, float ycoord, float heading);
 
 extern float x_pos;
 extern float y_pos;
+extern float imu_pos;
+extern float imu_pos_radians;
 
 
 #endif

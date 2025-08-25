@@ -10,6 +10,6 @@
 
 extern void initializePath();
 extern void purePursuitController();
-
+extern void goTo(double targetX, double targetY);
 
 #endif

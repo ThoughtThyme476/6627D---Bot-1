@@ -68,7 +68,7 @@ void initializePath() {
     path.push_back({0, 0});
 
     // Recompute pathDistances any time the path changes
-    initializePathDistances();
+    // initializePathDistances();
 }
 
 // Function to precompute distances along the path
@@ -83,6 +83,13 @@ void initializePathDistances() {
     }
 }
 
+// --- Tell robot to go to a single point (x, y) in mm ---
+void goTo(double targetX, double targetY) {
+    path.clear();
+    path.push_back({x_pos, y_pos});     // current position from odometry
+    path.push_back({targetX, targetY}); // desired point
+    initializePathDistances();
+}
 
 
 // Function to compute circle-line intersections
