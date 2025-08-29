@@ -130,6 +130,85 @@ void Odometry(){
 
 
 
+// void Odometry2() {
+//     // --- Constants ---
+//     constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
+//     constexpr double TICKS_PER_REV_ROTO  = 36000.0; // rotation sensor reports centidegrees
+//     constexpr double WHEEL_RADIUS_X_IN   = 3.25;    // drive wheel radius (forward movement) [inches]
+//     constexpr double WHEEL_RADIUS_Y_IN   = 2.0;     // tracking wheel radius (lateral movement) [inches]
+//     constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
+//     constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
+//     constexpr double INCH_TO_MM = 25.4;
+
+//     const double WHEEL_RADIUS_X_MM = WHEEL_RADIUS_X_IN * INCH_TO_MM;
+//     const double WHEEL_RADIUS_Y_MM = WHEEL_RADIUS_Y_IN * INCH_TO_MM;
+
+//     const double DEG2RAD = pi / 180.0;
+//     const double THRESH  = IMU_THERSHOLD * DEG2RAD;
+
+//     // --- Save old IMU state ---
+//     prev_imu_pos = imu_pos; 
+//     imu_pos = imu.get_rotation() + startingHeading; // degrees
+//     imu_pos_radians = imu_pos * DEG2RAD;            // radians 
+
+//     // Normalize IMU angle to [-180,180]
+//     if (imu_pos > 180) imu_pos -= 360;
+//     if (imu_pos < -180) imu_pos += 360;
+
+//     // --- Save old encoder states ---
+//     prev_left_encoder_pos   = left_encoder_pos;
+//     prev_right_encoder_pos  = right_encoder_pos;
+
+//     // --- Forward/backward distance from drive motor encoders ---
+//     double left_rev  = (LF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
+//     double right_rev = (RF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
+//     double revX      = (left_rev + right_rev) / 2.0;  // average L+R
+
+//     // convert to mm
+//     left_encoder_pos  = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
+
+//     // --- Lateral distance from tracking wheel (roto) ---
+//     double revY = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y;
+//     right_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
+
+//     // --- Delta wheel displacements (mm) ---
+//     double dXwheel = left_encoder_pos  - prev_left_encoder_pos;
+//     double dYwheel = right_encoder_pos - prev_right_encoder_pos;
+
+//     // --- Heading change (radians) ---
+//     phi = (imu_pos - prev_imu_pos) * DEG2RAD;
+
+//     // --- Local displacement (robot frame, mm) ---
+//     double localX, localY;
+//     if (fabs(phi) < THRESH) {
+//         localX = dXwheel + FORWARD_OFFSET  * phi;
+//         localY = dYwheel + SIDEWAYS_OFFSET * phi;
+//     } else {
+//         double s = 2.0 * sin(phi / 2.0);
+//         localX = s * ((dXwheel / phi) + FORWARD_OFFSET);
+//         localY = s * ((dYwheel / phi) + SIDEWAYS_OFFSET);
+//     }
+
+//     // --- Transform into global frame (mm) ---
+//     double theta_mid = (prev_imu_pos * DEG2RAD) + (phi / 2.0);
+//     double dx = localX * cos(theta_mid) - localY * sin(theta_mid);
+//     double dy = localX * sin(theta_mid) + localY * cos(theta_mid);
+
+//     x_pos += dx; // mm
+//     y_pos += dy; // mm
+
+//     // --- Debug printing (mm + heading in both units) ---
+//     if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0) {
+//         con.print(0,0, "X pos: %.1f mm     ", float(x_pos));
+//     } else if (odo_time % 100 == 0 && odo_time % 150 != 0) {
+//         con.print(1,0, "Y pos: %.1f mm     ", float(y_pos));
+//     } else if (odo_time % 150 == 0) {
+//         con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
+//     }
+
+//     odo_time += 10;
+// }
+
 void Odometry2() {
     // --- Constants ---
     constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
@@ -139,25 +218,34 @@ void Odometry2() {
     constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
     constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
     constexpr double INCH_TO_MM = 25.4;
-
     const double WHEEL_RADIUS_X_MM = WHEEL_RADIUS_X_IN * INCH_TO_MM;
     const double WHEEL_RADIUS_Y_MM = WHEEL_RADIUS_Y_IN * INCH_TO_MM;
 
     const double DEG2RAD = pi / 180.0;
     const double THRESH  = IMU_THERSHOLD * DEG2RAD;
 
+    double forward_encoder_pos = 0.0;       // mm, forward average (from left/right drive encoders)
+    double prev_forward_encoder_pos = 0.0;
+    double lateral_encoder_pos = 0.0;       // mm, lateral (from tracking wheel)
+    double prev_lateral_encoder_pos = 0.0;
+
+    // --- Tunable offsets (mm) ---
+    // Distance from tracking wheels to the robot’s center
+    static double OFFSET_X = 0.0;  // forward/backward offset (mm)
+    static double OFFSET_Y = 0.0;  // sideways offset (mm)
+
     // --- Save old IMU state ---
     prev_imu_pos = imu_pos; 
     imu_pos = imu.get_rotation() + startingHeading; // degrees
     imu_pos_radians = imu_pos * DEG2RAD;            // radians 
 
-    // Normalize IMU angle to [-180,180]
-    if (imu_pos > 180) imu_pos -= 360;
-    if (imu_pos < -180) imu_pos += 360;
+    // Normalize IMU angle to [-180,180] (in radians for consistency)
+    if (imu_pos_radians > pi) imu_pos_radians -= 2.0 * pi;
+    if (imu_pos_radians < -pi) imu_pos_radians += 2.0 * pi;
 
     // --- Save old encoder states ---
-    prev_left_encoder_pos   = left_encoder_pos;
-    prev_right_encoder_pos  = right_encoder_pos;
+    prev_forward_encoder_pos = forward_encoder_pos;
+    prev_lateral_encoder_pos = lateral_encoder_pos;
 
     // --- Forward/backward distance from drive motor encoders ---
     double left_rev  = (LF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
@@ -165,28 +253,28 @@ void Odometry2() {
     double revX      = (left_rev + right_rev) / 2.0;  // average L+R
 
     // convert to mm
-    left_encoder_pos  = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
+    forward_encoder_pos = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
 
     // --- Lateral distance from tracking wheel (roto) ---
     double revY = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y;
-    right_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
+    lateral_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
 
     // --- Delta wheel displacements (mm) ---
-    double dXwheel = left_encoder_pos  - prev_left_encoder_pos;
-    double dYwheel = right_encoder_pos - prev_right_encoder_pos;
+    double dXwheel = forward_encoder_pos - prev_forward_encoder_pos;
+    double dYwheel = lateral_encoder_pos - prev_lateral_encoder_pos;
 
     // --- Heading change (radians) ---
-    phi = (imu_pos - prev_imu_pos) * DEG2RAD;
+    phi = imu_pos_radians - (prev_imu_pos * DEG2RAD);
 
     // --- Local displacement (robot frame, mm) ---
     double localX, localY;
     if (fabs(phi) < THRESH) {
-        localX = dXwheel + FORWARD_OFFSET  * phi;
-        localY = dYwheel + SIDEWAYS_OFFSET * phi;
+        localX = dXwheel + OFFSET_X * phi;
+        localY = dYwheel + OFFSET_Y * phi;
     } else {
         double s = 2.0 * sin(phi / 2.0);
-        localX = s * ((dXwheel / phi) + FORWARD_OFFSET);
-        localY = s * ((dYwheel / phi) + SIDEWAYS_OFFSET);
+        localX = s * ((dXwheel / phi) + OFFSET_X);
+        localY = s * ((dYwheel / phi) + OFFSET_Y);
     }
 
     // --- Transform into global frame (mm) ---

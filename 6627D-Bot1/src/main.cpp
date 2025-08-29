@@ -47,7 +47,7 @@ void disabled() {
 //void autonomous moved into just auton.cpp
 
 void competition_initialize() {
-	int pressed = 0;
+	int pressed = 1;
 
 
 	
@@ -177,10 +177,13 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 }
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	setPosition(0,0,0);
-	delay(3000);
-	initializePath();
-	purePursuitController();
+	// setPosition(0,0,0);
+	// delay(3000);
+	// initializePath();
+	// purePursuitController();
+	// driveStraightSlow(500, 25);
+	// ColorSort();
+	driveStraight2(1000);
 }
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;
@@ -203,23 +206,23 @@ if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
  TopHood.set_value(Tophood);
 
  //printing stuff
- Odometry2();
+// Odometry2();
+double Intake_temp = ((Intake1.get_temperature() + Intake2.get_temperature())/2);
+double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
+if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
+    con.print(0,0,"time:%f       ", float(error));//viewTime
+} else if (time% 100 == 0 && time % 150 !=0){
+    con.print(1,0,"error%f      ", float(time2));
+} else if (time % 150 == 0){
+    con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp), int(Intake_temp), int(MainIntake.get_temperature()));
+}
 
-// double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
-// if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
-//     con.print(0,0,"XPos:%f       ", float(x_pos));//viewTime
-// } else if (time% 100 == 0 && time % 150 !=0){
-//     con.print(1,0,"Ypos%f      ", float(y_pos));
-// } else if (time % 150 == 0){
-//     con.print(2,0,"C:%i I:%i I2:%i      ",int(chasstemp), int(Intake1.get_temperature()), int(Intake2.get_temperature()));
-// }
-
-  if (time % 50 == 0 && time % 100 != 0 && time % 150 != 0) {
-        con.print(0,0, "X pos: %.1f mm     ", float(x_pos));
-    } else if (time % 100 == 0 && time % 150 != 0) {
-        con.print(1,0, "Y pos: %.1f mm     ", float(y_pos));
-    } else if (time % 150 == 0) {
-        con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
+//   if (time % 50 == 0 && time % 100 != 0 && time % 150 != 0) {
+//         con.print(0,0, "time: %.1f mm     ", float(time2));
+//     } else if (time % 100 == 0 && time % 150 != 0) {
+//         con.print(1,0, "error: %.1f mm     ", float(error));
+//     } else if (time % 150 == 0) {
+//         con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
     }
 
 delay(10);
@@ -227,4 +230,4 @@ time += 10;
 
 }
 
-}
+

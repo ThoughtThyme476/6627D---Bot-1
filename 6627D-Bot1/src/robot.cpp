@@ -10,11 +10,11 @@
 #define RF_PORT 2
 #define RM_PORT 18 
 #define RB_PORT 20 
-#define IMU_PORT 3
+#define IMU_PORT 5
 #define Intake1_port 12
 #define Intake2_PORT 19
 #define MainIntake_PORT 16
-#define OPTICAL_PORT 14
+#define OPTICAL_PORT 4
 #define DISTANCE_PORT 15
 #define DISTANCE_PORT2 16
 #define ROTATION_PORT 17
@@ -40,6 +40,6 @@ pros::Controller con (pros::E_CONTROLLER_MASTER);
 
 pros::ADIDigitalOut Intake_Piston ('D',false);
 pros::ADIDigitalOut MiddleHood ('A',false);//out soloniod was stolen so I changed this
-pros::ADIDigitalOut Basket('B',true);
+pros::ADIDigitalOut Basket('B',false);
 pros::ADIDigitalOut TopHood('E', false);
 pros::ADIDigitalIn selec ('H');

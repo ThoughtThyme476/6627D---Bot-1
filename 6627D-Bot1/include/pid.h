@@ -5,9 +5,9 @@
 #ifndef PIDH
 #define PIDH
 
-#define STRAIGHT_KP 3.25 
-#define STRAIGHT_KI 0.2 
-#define STRAIGHT_KD 28 
+#define STRAIGHT_KP 1 
+#define STRAIGHT_KI 0 
+#define STRAIGHT_KD 0 
 //done. Keep as is 
 
 #define STRAIGHT_INTEGRAL_KI 40//
