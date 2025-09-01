@@ -18,7 +18,7 @@
 #define DISTANCE_PORT 15
 #define DISTANCE_PORT2 16
 #define ROTATION_PORT 17
-
+#define DISTANCE_PORT3 6
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
 pros::Motor LM (LM_PORT, pros::E_MOTOR_GEARSET_06, false); //keep
@@ -37,6 +37,7 @@ pros::Rotation roto(ROTATION_PORT);
 pros::Distance dist_left (DISTANCE_PORT);
 pros::Distance dist_right (DISTANCE_PORT2);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
+pros::Distance Counter (DISTANCE_PORT3);
 
 pros::ADIDigitalOut Intake_Piston ('D',false);
 pros::ADIDigitalOut MiddleHood ('A',false);//out soloniod was stolen so I changed this

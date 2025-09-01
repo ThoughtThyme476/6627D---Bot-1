@@ -111,7 +111,7 @@ while(true){
 
 void opcontrol() {
 
-setPosition(0,0,0);
+// setPosition(0,0,0);
 bool arcToggle = true;
 bool tankToggle=false;
 bool StakeWingToggle=false;
@@ -128,7 +128,7 @@ bool Tophood = false;
 bool LBC = false;
 int Macro = 0;
 eyes.set_led_pwm(100);
-delay(3000);
+// delay(3000);
 
 while (true) {
 
@@ -177,13 +177,9 @@ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 }
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	// setPosition(0,0,0);
-	// delay(3000);
-	// initializePath();
-	// purePursuitController();
-	// driveStraightSlow(500, 25);
-	// ColorSort();
-	driveStraight2(1000);
+	while(true){
+		Counting();
+	}
 }
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;
@@ -208,13 +204,13 @@ if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
  //printing stuff
 // Odometry2();
 double Intake_temp = ((Intake1.get_temperature() + Intake2.get_temperature())/2);
-double  chasstemp = ((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4);
+double  chasstemp = (((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4)*(9/5)+32);
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
-    con.print(0,0,"time:%f       ", float(error));//viewTime
+    con.print(0,0,"number:%f       ", float(number));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
     con.print(1,0,"error%f      ", float(time2));
 } else if (time % 150 == 0){
-    con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp), int(Intake_temp), int(MainIntake.get_temperature()));
+    con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp)*(9/5))+32, int(Intake_temp)*(9/5)+32, int((MainIntake.get_temperature()))*(9/5)+32;
 }
 
 //   if (time % 50 == 0 && time % 100 != 0 && time % 150 != 0) {

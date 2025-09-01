@@ -24,182 +24,180 @@ using namespace pros;
 // --------------------------
 // Robot Pose (global vars from odometry)
 // --------------------------
-extern double x_pos;        // mm
-extern double y_pos;        // mm
-extern double imu_pos_radians; // radians
+// extern double x_pos;        // mm
+// extern double y_pos;        // mm
+// extern double imu_pos_radians; // radians
 
-// --------------------------
-// Tunable Constants
-// --------------------------
-constexpr double LOOKAHEAD_DIST = 200.0;  // mm
-constexpr double MAX_SPEED      = 100.0;  // motor %
-constexpr double TURN_GAIN      = 2.0;    // steering aggressiveness
+// // --------------------------
+// // Tunable Constants
+// // --------------------------
+// constexpr double LOOKAHEAD_DIST = 200.0;  // mm
+// constexpr double MAX_SPEED      = 100.0;  // motor %
+// constexpr double TURN_GAIN      = 2.0;    // steering aggressiveness
 
-// --------------------------
-// Waypoint Struct
-// --------------------------
+// // --------------------------
+// // Waypoint Struct
+// // --------------------------
 
-struct Point {
-    double x;
-    double y;
+// struct Point {
+//     double x;
+//     double y;
 
-    // Default constructor
-    Point() : x(0), y(0) {}
+//     // Default constructor
+//     Point() : x(0), y(0) {}
 
-    // Constructor for (x, y)
-    Point(double _x, double _y) : x(_x), y(_y) {}
-};
+//     // Constructor for (x, y)
+//     Point(double _x, double _y) : x(_x), y(_y) {}
+// };
 
+// // Global path vector (extern if needed)
+// std::vector<Point> path;
 
-// Example path (in mm, field coords)
+// int pathSelect = 1; // extern and set before auton
 
-
-// Global path vector (extern if needed)
-std::vector<Point> path;
-
-int pathSelect = 1; // extern and set before auton
-
-void initPath() {
-    if (pathSelect == 1) {
-        path = {
-            {0, 0},
-            {500, 0},
-            {1000, 0},
-            {1500, 0}
-        };
-    } 
-    else if (pathSelect == 2) {
-        path = {
-            {0, 0},
-            {300, 300},
-            {600, 600},
-            {900, 300},
-            {1200, 0}
-        };
-    } 
-    else if (pathSelect == 3) {
-        path = {
-            {0, 0},
-            {0, 500},
-            {0, 1000}
-        };
-    }
-}
+// void initPath() {
+//     if (pathSelect == 1) {
+//         path = {
+//             {0, 0},
+//             {500, 0},
+//             {1000, 0},
+//             {1500, 0}
+//         };
+//     } 
+//     else if (pathSelect == 2) {
+//         path = {
+//             {0, 0},
+//             {300, 300},
+//             {600, 600},
+//             {900, 300},
+//             {1200, 0}
+//         };
+//     } 
+//     else if (pathSelect == 3) {
+//         path = {
+//             {0, 0},
+//             {0, 500},
+//             {0, 1000}
+//         };
+//     }
+// }
 
 
-// --------------------------
-// Find Lookahead Point
-// --------------------------
-Point findLookaheadPoint() {
-    Point lookahead = path.back(); // default to last point
 
-    for (size_t i = 0; i < path.size() - 1; i++) {
-        Point p1 = path[i];
-        Point p2 = path[i + 1];
+// // --------------------------
+// // Find Lookahead Point
+// // --------------------------
+// Point findLookaheadPoint() {
+//     Point lookahead = path.back(); // default to last point
 
-        // Segment vector
-        double dx = p2.x - p1.x;
-        double dy = p2.y - p1.y;
+//     for (size_t i = 0; i < path.size() - 1; i++) {
+//         Point p1 = path[i];
+//         Point p2 = path[i + 1];
 
-        // Robot to p1
-        double fx = p1.x - x_pos;
-        double fy = p1.y - y_pos;
+//         // Segment vector
+//         double dx = p2.x - p1.x;
+//         double dy = p2.y - p1.y;
 
-        double a = dx*dx + dy*dy;
-        double b = 2 * (fx*dx + fy*dy);
-        double c = (fx*fx + fy*fy) - LOOKAHEAD_DIST*LOOKAHEAD_DIST;
+//         // Robot to p1
+//         double fx = p1.x - x_pos;
+//         double fy = p1.y - y_pos;
 
-        double discriminant = b*b - 4*a*c;
-        if (discriminant < 0) continue;
+//         double a = dx*dx + dy*dy;
+//         double b = 2 * (fx*dx + fy*dy);
+//         double c = (fx*fx + fy*fy) - LOOKAHEAD_DIST*LOOKAHEAD_DIST;
 
-        discriminant = sqrt(discriminant);
+//         double discriminant = b*b - 4*a*c;
+//         if (discriminant < 0) continue;
 
-        double t1 = (-b - discriminant) / (2*a);
-        double t2 = (-b + discriminant) / (2*a);
+//         discriminant = sqrt(discriminant);
 
-        if (t1 >= 0 && t1 <= 1) {
-            lookahead.x = p1.x + t1 * dx;
-            lookahead.y = p1.y + t1 * dy;
-            return lookahead;
-        }
-        if (t2 >= 0 && t2 <= 1) {
-            lookahead.x = p1.x + t2 * dx;
-            lookahead.y = p1.y + t2 * dy;
-            return lookahead;
-        }
-    }
+//         double t1 = (-b - discriminant) / (2*a);
+//         double t2 = (-b + discriminant) / (2*a);
 
-    return lookahead;
-}
+//         if (t1 >= 0 && t1 <= 1) {
+//             lookahead.x = p1.x + t1 * dx;
+//             lookahead.y = p1.y + t1 * dy;
+//             return lookahead;
+//         }
+//         if (t2 >= 0 && t2 <= 1) {
+//             lookahead.x = p1.x + t2 * dx;
+//             lookahead.y = p1.y + t2 * dy;
+//             return lookahead;
+//         }
+//     }
 
-// --------------------------
-// Pure Pursuit Drive Step
-// --------------------------
-void purePursuitStep() {
-    // Update odometry
-    Odometry2();
+//     return lookahead;
+// }
 
-    // Find lookahead
-    Point lookahead = findLookaheadPoint();
+// // --------------------------
+// // Pure Pursuit Drive Step
+// // --------------------------
+// void purePursuitStep() {
+//     // Update odometry
+//     Odometry2();
 
-    // Transform to robot frame
-    double dx = lookahead.x - x_pos;
-    double dy = lookahead.y - y_pos;
+//     // Find lookahead
+//     Point lookahead = findLookaheadPoint();
 
-    double localX = dx * cos(-imu_pos_radians) - dy * sin(-imu_pos_radians);
-    double localY = dx * sin(-imu_pos_radians) + dy * cos(-imu_pos_radians);
+//     // Transform to robot frame
+//     double dx = lookahead.x - x_pos;
+//     double dy = lookahead.y - y_pos;
 
-    // Curvature control
-    double curvature = (2 * localY) / (LOOKAHEAD_DIST*LOOKAHEAD_DIST);
+//     double localX = dx * cos(-imu_pos_radians) - dy * sin(-imu_pos_radians);
+//     double localY = dx * sin(-imu_pos_radians) + dy * cos(-imu_pos_radians);
 
-    // Speed + steering
-    double leftSpeed  = MAX_SPEED * (1 - TURN_GAIN * curvature);
-    double rightSpeed = MAX_SPEED * (1 + TURN_GAIN * curvature);
+//     // Curvature control
+//     double curvature = (2 * localY) / (LOOKAHEAD_DIST*LOOKAHEAD_DIST);
 
-    // Normalize if needed
-    double maxVal = fmax(fabs(leftSpeed), fabs(rightSpeed));
-    if (maxVal > MAX_SPEED) {
-        leftSpeed  = (leftSpeed  / maxVal) * MAX_SPEED;
-        rightSpeed = (rightSpeed / maxVal) * MAX_SPEED;
-    }
+//     // Speed + steering
+//     double leftSpeed  = MAX_SPEED * (1 - TURN_GAIN * curvature);
+//     double rightSpeed = MAX_SPEED * (1 + TURN_GAIN * curvature);
 
-    // Convert to voltage [-12700,12700]
-    int leftVoltage  = (int)((leftSpeed / 100.0) * 12700);
-    int rightVoltage = (int)((rightSpeed / 100.0) * 12700);
+//     // Normalize if needed
+//     double maxVal = fmax(fabs(leftSpeed), fabs(rightSpeed));
+//     if (maxVal > MAX_SPEED) {
+//         leftSpeed  = (leftSpeed  / maxVal) * MAX_SPEED;
+//         rightSpeed = (rightSpeed / maxVal) * MAX_SPEED;
+//     }
 
-    // Apply to chassis
-    chasMove(leftVoltage, leftVoltage, leftVoltage,
-             rightVoltage, rightVoltage, rightVoltage);
-}
+//     // Convert to voltage [-12700,12700]
+//     int leftVoltage  = (int)((leftSpeed / 100.0) * 12700);
+//     int rightVoltage = (int)((rightSpeed / 100.0) * 12700);
 
-// Global or passed in somewhere
-bool stopper = false;  // set to true when you want to end PP
+//     // Apply to chassis
+//     chasMove(leftVoltage, leftVoltage, leftVoltage, rightVoltage, rightVoltage, rightVoltage);
+// }
 
-void runPurePursuit() {
-    while (true) {
-        purePursuitStep();
+// // Global or passed in somewhere
+// bool stopper = false;  // set to true when you want to end PP
 
-        // Stop if stopper flag is set
-        if (stopper) {
-            chasMove(0,0,0,0,0,0); // stop motors
-            break; // exit loop, ready for PID or other control
-        }
+// void runPurePursuit() {
+//     while (true) {
+//         purePursuitStep();
+//         pros::delay(20);
+//     }
+// }
 
-        pros::delay(20);
-    }
-}
+// void runPurePursuit() {
+//     while (true) {
+//         purePursuitStep();
+
+//         // Stop if stopper flag is set
+//         if (stopper) {
+//             chasMove(0,0,0,0,0,0); // stop motors
+//             break; // exit loop, ready for PID or other control
+//         }
+
+//         pros::delay(20);
+//     }
+// }
 
 
 
 // --------------------------
 // Pure Pursuit Main Loop
 // --------------------------
-void runPurePursuit() {
-    while (true) {
-        purePursuitStep();
-        pros::delay(20);
-    }
-}
+
 
 
 

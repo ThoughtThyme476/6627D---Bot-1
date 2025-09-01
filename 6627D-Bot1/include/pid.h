@@ -5,9 +5,9 @@
 #ifndef PIDH
 #define PIDH
 
-#define STRAIGHT_KP 1 
-#define STRAIGHT_KI 0 
-#define STRAIGHT_KD 0 
+#define STRAIGHT_KP 3.25 
+#define STRAIGHT_KI 0.2 
+#define STRAIGHT_KD 28 
 //done. Keep as is 
 
 #define STRAIGHT_INTEGRAL_KI 40//
@@ -44,13 +44,14 @@ extern void RingHold(int speed);
 extern void driveTurnT(int target);
 extern void wallResetF(int resetTime);
 extern void wallResetB(int resetTime);
-
+extern void Counting ();
 extern int color;
 extern bool InitColor;
 
 extern int time2;
 extern float error;
 extern int tunetime2;
+extern int number;
 extern void justIntake (int time);
 extern void hooks(int speed);
 //extern void stallProt();

@@ -5,9 +5,9 @@
 #define ODOH
 
 #define FORWARD_OFFSET 0
-#define IMU_THERSHOLD 0.0001
+#define IMU_THERSHOLD 2.0 // TUNE
 #define HEADING_CUTOFF 0.0001745329
-#define SIDEWAYS_OFFSET 5.5
+#define SIDEWAYS_OFFSET 5.5 // Remeasure and tune
 extern void Odometry();
 extern void Odometry2();
 extern void driveToPoint(double xTarget, double yTarget, double preferredHeading);

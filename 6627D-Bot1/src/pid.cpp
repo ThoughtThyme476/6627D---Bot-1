@@ -75,7 +75,24 @@ int time5;
 // other variables
 double trueTarget = 0;
 int color;    
-    
+  
+void Counting (){
+    int time = 0;
+    double dist1 = 125;
+    double dist2 = 200;
+    int number = 0;
+    bool Delay = false;
+    double sense = Counter.get();
+    if (sense < dist1 && ((MainIntake.get_voltage()* 1000) > 20 || (MainIntake.get_voltage()* 1000) < -20)){
+        number = number + 1;
+        bool Delay = true;
+    } else if (Delay && ((MainIntake.get_voltage()* 1000) > 60 || (MainIntake.get_voltage()* 1000) < -60)) {
+        time++;  
+    } else if (time > 100){
+        Delay = false;
+        time = 0;
+    }
+}
 void setConstants(double kp, double ki, double kd){
 
     vKp = kp;
@@ -112,7 +129,7 @@ double calcPID(double target, double input, int integralKI, int maxIntegral){
 //    ColorSort();
   // StallProtection();
   
-    
+    //sigma boy//
     int integral;
     prevError = error;
     error = target - input;
@@ -231,7 +248,7 @@ void driveStraight(int target) {
 
     double x = 0;
     x = double(abs(target));
-timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (-0.00000580494 * pow(x,3)) + (0.00474867 * pow(x,2)) + (-0.948043 * x) + 764.64516;
+    timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (-0.00000580494 * pow(x,3)) + (0.00474867 * pow(x,2)) + (-0.948043 * x) + 764.64516;
     imu.tare();
 
     
@@ -336,11 +353,11 @@ timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
     //setConstants(variKP, TURN_KI, variKD);
     if(abs(error) <= 3){
-        setConstants(12.5, 0, 0);
+        setConstants(13, 0, 0);
     } else{
         setConstants(TURN_KP, TURN_KI, TURN_KD); 
     } 
-   //timeout = (-0.000000141031*pow(x,5)) + (0.0000650427*pow(x,4)) + (-0.0105768*pow(x,3)) + (0.678481*pow(x,2)) + (-8.01221*(x)) + 353.39229;
+ timeout = ( 0.000000171394*pow(x,5)) + (-0.0000752581*pow(x,4)) + (0.0118993*pow(x,3)) + (-0.846036*pow(x,2)) + (31.0054*(x)) + 139.04674;
     imu.tare_heading();
 
     while(true) { 
@@ -420,7 +437,7 @@ timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (
     double variKD = 0;
     double variKP = 0;
     x = double(abs(turnv));
-   //timeout = (-0.000000141031*pow(x,5)) + (0.0000650427*pow(x,4)) + (-0.0105768*pow(x,3)) + (0.678481*pow(x,2)) + (-8.01221*(x)) + 353.39229;
+   timeout = ( 0.000000171394*pow(x,5)) + (-0.0000752581*pow(x,4)) + (0.0118993*pow(x,3)) + (-0.846036*pow(x,2)) + (31.0054*(x)) + 139.04674;
     // variKD = ((-0.000000010414) * pow(x,5)) + (0.00000436151 * pow(x,4)) + (-0.000635881 * pow(x,3)) + (0.0378021 * pow(x,2)) + (-0.805858 * x) + 69.3766;
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
 
@@ -428,7 +445,7 @@ timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (
     while(true) { 
 
     if(abs(error) <= 3){
-        setConstants(12.5, 0, 0);
+        setConstants(13, 0, 0);
     } else{
          setConstants(TURN_KP, TURN_KI, TURN_KD); 
     }     
@@ -523,11 +540,11 @@ void driveTurnT(int target){
     double variKD = 0;
     double variKP = 0;
     x = double(abs(turnv));
-    //timeout = timeout = (-0.000000141031*pow(x,5)) + (0.0000650427*pow(x,4)) + (-0.0105768*pow(x,3)) + (0.678481*pow(x,2)) + (-8.01221*(x)) + 353.39229;
+    timeout = ( 0.000000171394*pow(x,5)) + (-0.0000752581*pow(x,4)) + (0.0118993*pow(x,3)) + (-0.846036*pow(x,2)) + (31.0054*(x)) + 139.04674;
     // variKD = ((-0.000000010414) * pow(x,5)) + (0.00000436151 * pow(x,4)) + (-0.000635881 * pow(x,3)) + (0.0378021 * pow(x,2)) + (-0.805858 * x) + 69.3766;
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
     if(abs(error) <= 3){
-        setConstants(12.5, 0, 0);
+        setConstants(13, 0, 0);
     } else{
         setConstants(TURN_KP, TURN_KI, TURN_KD); 
     }  

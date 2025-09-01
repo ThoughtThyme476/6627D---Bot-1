@@ -22,6 +22,7 @@ extern pros::Rotation roto;
 extern pros::Distance dist_left;
 extern pros::Distance dist_right;
 extern pros::Controller con;
+extern pros::Distance Counter;
 
 
 extern pros::ADIDigitalOut MiddleHood;
