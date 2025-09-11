@@ -11,60 +11,55 @@
   }
 
  void Standard_AWP_red(){
-  driveStraight2(1500);
-  driveTurn2(-90);
-  driveStraightSlow(375, 90);
-  Intake_Piston.set_value(true);
-  Intake1.move(-95);
-	Intake2.move(95);
-	MainIntake.move(-127);
- // wallResetF(500);
-  delay(200);
-  driveStraightSlow(-200, 14);
-      driveStraight2(-200);
-      Basket.set_value(true);
-      driveTurn2(90);
-      Intake1.move(0);
-      Intake2.move(0);
-      MainIntake.move(-100);
-      TopHood.set_value(true);
-      Intake_Piston.set_value(false);
-      driveStraight2(700);
-      driveStraightSlow(20, 50);
+  eyes.set_led_pwm(100);
+  driveStraightC(575);
+    //driveStraightC(300);
+    driveArcLF(45, 300, 1000, 75);
+          TongueMech.set_value(true);
+    driveStraightC(95);
+    driveArcLF(40, 220, 1000, 75);
+      Intake1.move(-127);  
       MainIntake.move(-127);
-      delay(3000);
-  driveStraightC(-300);
-  Basket.set_value(false);
+    driveStraight2(400);
+  driveStraight2(-75);
+  driveStraight2(100);
+    driveStraight2(-75);
+  driveStraight2(100);
+  driveStraightC(-200);
+  TongueMech.set_value(false);
+  TopHood.set_value(true);
+    Intake1.move(-127);  
+  MainIntake.move(-127);
+  driveStraight2(-300);
+  Intake1.move(0);  
+  MainIntake.move(0);
+  driveTurn2(89);
+  Basket.set_value(true);
+  driveStraight2(600);
+  driveStraightSlow(75, 25);
+  delay(2000);
   TopHood.set_value(false);
-  driveTurn2(150);
-  driveStraight2(650);
-  Intake1.move(-127);
-	Intake2.move(127);
-	MainIntake.move(-127);
-  driveArcLF(60, 500, 1000, 25);
-  driveArcRF(45, 300, 1000, 50);
-  driveStraight2(225);
-      //driveTurn2160);
-      Basket.set_value(true);
-      MiddleHood.set_value(true);
-      // delay(2000);
-      // driveStraightC(-300);
-      // driveTurn2(180);
-      // Basket.set_value(true);
-      // MiddleHood.set_value(false);
-      // driveSortHoldRedC(1100, 100);
-      // MainIntake.move(-127);
-      // driveArcLF(135, 300, 1000, 100);
-      // driveStraight2(100);
+  Basket.set_value(false);
+  driveStraight2(-500);
+  driveTurn2(136);
+  // driveStraight2(1500);
   // Intake1.move(0);
-	// Intake2.move(0);
-	// MainIntake.move(0);
-  // driveStraight2(400);
- 
-  
+  // MainIntake.move(0);
+  // TongueMech.set_value(true);
+  // driveTurn2(140);
+  // driveStraight2(150);
+  // Basket.set_value(true);
+  // MiddleHood.set_value(true);
+  // Intake1.move(-127);  
+  // MainIntake.move(-127);
  }
  void Goal_Rush_red(){ 
-
+  eyes.set_led_pwm(100);
+  driveStraight2(1000);
+  MainIntake.move(-127);
+  Intake1.move(-127);
+  driveSortHoldblue(1000, 50);
+  driveSortHoldblue(-1000, 50);
  }
 
  void Ring_Rush_red(){ 
@@ -79,8 +74,44 @@
 
 
  void Standard_AWP_blue(){ 
-
-
+    eyes.set_led_pwm(100);
+  driveStraightC(540);
+    //driveStraightC(300);
+    driveArcLF(45, 255, 1000, 75);
+               TongueMech.set_value(true);
+    driveStraightC(100);
+    driveArcLF(35, 260, 1000, 75);
+      Intake1.move(-127);  
+      MainIntake.move(-127);
+  driveTurn2(-90);
+  driveStraight2(250);
+  driveStraight2(-75);
+  driveStraight2(250);
+  driveStraight2(-75);
+  driveStraight2(100);
+  driveStraightC(-200);
+  TongueMech.set_value(false);
+    Intake1.move(0);  
+  MainIntake.move(0);
+  TopHood.set_value(true);
+  driveStraight2(-300);
+  driveTurn2(91);
+  Basket.set_value(true);
+  driveStraight2(475);
+    Intake1.move(-127);  
+    MainIntake.move(-127);
+  driveStraightSlow(25, 75);
+  delay(2000);
+  TopHood.set_value(false);
+  Basket.set_value(false);
+  driveStraight2(-500);
+  driveTurn2(134);
+  driveStraight2(1500);
+  TongueMech.set_value(true); 
+  driveTurn2(145);
+  Basket.set_value(true);
+  driveStraight2(230);
+  MiddleHood.set_value(true);
   }
 
 
@@ -101,13 +132,27 @@
  }
  
  void skill_run(){
-
-
+  driveStraight2(1525);
+  driveTurn2(90);
+  TongueMech.set_value(true);
+  delay(500);
+  Intake1.move(-127);
+  MainIntake.move(-127);
+  driveStraightSlow(375, 90);
+  driveSortHoldblue(-50, 100);
+  driveSortHoldblue(75, 100);
+  driveSortHoldblue(-50, 100);
+  driveSortHoldblue(75, 100);
+  driveSortHoldblue(-50, 100);
+  driveSortHoldblue(100, 100);
+  driveStraightC(-200);
+  TongueMech.set_value(false);
+  driveStraight2(-300);
  }
  
  void autonomous(){
+
   if (atn == 0) {
-  }else if (atn == 0) {
     DriveStraightAuto();
   }
    else if (atn == 1) {

@@ -1,7 +1,5 @@
 #include "main.h"
 
-
-//hi
 //header Guards, safety
 #ifndef ROBOTH
 #define ROBOTH
@@ -14,7 +12,6 @@ extern pros::Motor RM;
 extern pros::Motor RB;
 
 extern pros::Motor Intake1;
-extern pros::Motor Intake2;
 extern pros::Motor MainIntake;
 extern pros::Imu imu;
 extern pros::Optical eyes; 
@@ -27,7 +24,7 @@ extern pros::Distance Counter;
 
 extern pros::ADIDigitalOut MiddleHood;
 extern pros::ADIDigitalOut Basket;
-extern pros::ADIDigitalOut Intake_Piston;
+extern pros::ADIDigitalOut TongueMech;
 extern pros::ADIDigitalOut TopHood;
 extern pros::ADIDigitalIn selec;
 

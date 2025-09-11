@@ -45,6 +45,7 @@ extern void driveTurnT(int target);
 extern void wallResetF(int resetTime);
 extern void wallResetB(int resetTime);
 extern void Counting ();
+extern void IntakeStopper(int SecVoltage, int choose);
 extern int color;
 extern bool InitColor;
 

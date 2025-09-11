@@ -14,7 +14,7 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 1;
+int atn = 2;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
@@ -126,16 +126,18 @@ bool MidHood = false;
 bool basket = false;
 bool Tophood = false;
 bool LBC = false;
+bool IntakeTune = false;
 int Macro = 0;
 eyes.set_led_pwm(100);
-// delay(3000);
+//delay(3000);
+bool slow = false;
 
 while (true) {
 
 //chassis drive 
 int power = con.get_analog(ANALOG_LEFT_Y);
 int RX = con.get_analog(ANALOG_RIGHT_X);
-int turn = int(pow(RX, 3)/ 16129);
+int turn = int(pow(RX, 3)/ 24193); // change 16129 by whatever to make turning more or less sensetive 
 int left= power - turn; 
 int right = power + turn;
 
@@ -162,34 +164,24 @@ RM.move(left);
 RB.move(left);
 }
 
-if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
-	Intake1.move(-127);
-	Intake2.move(127);
-	MainIntake.move(-127);
-} else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
-	Intake1.move(127);
-	Intake2.move(-127);
-	MainIntake.move(127);
-} else {
-	Intake1.move(0);
-	Intake2.move(0);
-	MainIntake.move(0);
-}
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	while(true){
-		Counting();
-	}
+	slow = !slow;
+	// Intake1.move(-127);
+	// MainIntake.move(-127);
+	// driveSortHoldblue(2200, 15);
 }
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
 	IntakePiston = !IntakePiston;
 	 }
- Intake_Piston.set_value(IntakePiston);
+ TongueMech.set_value(IntakePiston);
 
    if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_Y)) {
 	MidHood = !MidHood;
+	basket = !basket;
 	 }
  MiddleHood.set_value(MidHood);
+ Basket.set_value(basket);
 
    if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)) {
 	basket = !basket;
@@ -198,19 +190,43 @@ if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 
   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_RIGHT)) {
 	Tophood = !Tophood;
+	basket = !basket;
 	 }
  TopHood.set_value(Tophood);
+ Basket.set_value(basket);
 
+ if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+	if(slow == true){
+	Intake1.move(-100);
+	MainIntake.move(-100);
+	} else {
+	Intake1.move(-127);
+	MainIntake.move(-127);
+	}
+} else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
+	if(slow == true){
+	Intake1.move(60);
+	MainIntake.move(60);
+	} else {
+	Intake1.move(127);
+	MainIntake.move(127);
+	}
+} else {
+	Intake1.move(0);
+	MainIntake.move(0);
+}
+
+// Standard_AWP_red();
  //printing stuff
 // Odometry2();
-double Intake_temp = ((Intake1.get_temperature() + Intake2.get_temperature())/2);
+double Intake_temp = ((Intake1.get_temperature()));
 double  chasstemp = (((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4)*(9/5)+32);
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
     con.print(0,0,"number:%f       ", float(number));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
     con.print(1,0,"error%f      ", float(time2));
 } else if (time % 150 == 0){
-    con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp)*(9/5))+32, int(Intake_temp)*(9/5)+32, int((MainIntake.get_temperature()))*(9/5)+32;
+    con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp), int(Intake_temp), int((MainIntake.get_temperature())));
 }
 
 //   if (time % 50 == 0 && time % 100 != 0 && time % 150 != 0) {

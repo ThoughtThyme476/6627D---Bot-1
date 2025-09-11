@@ -75,24 +75,44 @@ int time5;
 // other variables
 double trueTarget = 0;
 int color;    
-  
+
 void Counting (){
     int time = 0;
-    double dist1 = 125;
+    double dist1 = 150;
     double dist2 = 200;
     int number = 0;
     bool Delay = false;
     double sense = Counter.get();
+
     if (sense < dist1 && ((MainIntake.get_voltage()* 1000) > 20 || (MainIntake.get_voltage()* 1000) < -20)){
         number = number + 1;
-        bool Delay = true;
-    } else if (Delay && ((MainIntake.get_voltage()* 1000) > 60 || (MainIntake.get_voltage()* 1000) < -60)) {
-        time++;  
-    } else if (time > 100){
-        Delay = false;
-        time = 0;
+        delay(50);
     }
 }
+
+void IntakeStopper(int SecVoltage, int choose){ // 1 = anti red, 2 = anti blue
+          Intake1.move(SecVoltage);
+          MainIntake.move(SecVoltage);
+
+        if (choose == 1){
+            color = eyes.get_hue();
+            if (color < 35){
+                Intake1.move(0);
+                MainIntake.move(0);
+       
+            } 
+            
+            if (choose == 2){
+                if (color> 160){
+                Intake1.move(0);
+                MainIntake.move(0);
+            
+            }
+        
+        }
+    }
+}
+
 void setConstants(double kp, double ki, double kd){
 
     vKp = kp;
@@ -445,7 +465,7 @@ void driveStraight(int target) {
     while(true) { 
 
     if(abs(error) <= 3){
-        setConstants(13, 0, 0);
+        setConstants(14, 0, 0);
     } else{
          setConstants(TURN_KP, TURN_KI, TURN_KD); 
     }     
@@ -1196,19 +1216,12 @@ if(trueTarget > 180) {
 
 
 void driveSortHoldblue(int target, int speed) {
-    if (target > 0){
-        target = target + 500;
-     } else{
-        target = target - 500;
-     }
 
     int timeout = 30000;
 
     double x = 0;
     x = double(abs(target));
-  timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (-0.00000580494 * pow(x,3)) + (0.00474867 * pow(x,2)) + (-0.948043 * x) + 764.64516; 
-      timeout = timeout * (2 - (double(speed)/100.0));
-
+   timeout = (-0.000000000000541422* pow(x,5)) + ( 0.00000000300293 * pow(x,4)) + (-0.00000580494 * pow(x,3)) + (0.00474867 * pow(x,2)) + (-0.948043 * x) + 764.64516;
     double voltage;
     double encoderAVG;
     int count = 0;
@@ -1227,11 +1240,11 @@ void driveSortHoldblue(int target, int speed) {
             setConstants(5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
-        }   
+        }  
         voltage = calcPID(target, encoderAVG, STRAIGHT_INTEGRAL_KI, STRAIGHT_MAX_INTEGRAL);
 
 if(trueTarget > 180) {
-    trueTarget = (trueTarget - 360);
+    trueTarget = (trueTarget- 360);
 }
 
 
@@ -1243,45 +1256,50 @@ if(trueTarget > 180) {
       }
 
     if((trueTarget < 0) && (position > 0)){
-        if((position - trueTarget ) >= 180){
-            trueTarget = trueTarget + 360;
+        if((position - trueTarget) >= 180){
+            trueTarget = trueTarget+ 360;
             position = imu.get_heading();
         }
     } else if((trueTarget > 0) && (position < 0)){
-        if ((trueTarget - position) >= 180){
+        if ((trueTarget- position) >= 180){
             position = imu.get_heading();
         }
      }
     
     setConstants(HEADING_KP, HEADING_KI, HEADING_KD);  
         headingError = calcPID2(trueTarget, position, HEADING_INTEGRAL_KI, HEADING_MAX_INTEGRAL);
+      // headingError = 0;
 
-        if(voltage > 127 * double(speed)/100){
+          if(voltage > 127 * double(speed)/100){
             voltage = 127 * double(speed)/100;
         } else if (voltage < -127 * double(speed)/100){
             voltage = -127 * double(speed)/100;
         }
 
-   if((eyes.get_hue()<230 && eyes.get_hue()>170) && eyes.get_proximity() > 150){
-    Intake1.move(0);
-    } 
 
+
+    // require object close (proximity) and hue in blue range before stopping
+    if (eyes.get_hue() > 40 && eyes.get_hue() < 230) {
+        // stop intakes and set lock so other code won't restart them
+        Intake1.move(0);
+        MainIntake.move(0);
+    }
         chasMove((voltage + headingError), (voltage + headingError), (voltage + headingError), (voltage - headingError), (voltage - headingError),(voltage - headingError));
-        if (abs(target - encoderAVG) <= 4) count++;
-        if (count >= 20 || time2 > timeout){
-           break;
+        if (abs(target - encoderAVG) <= 2) count++;
+        if (count >= 25 || time2 > timeout){
+          break;
         }
 
         delay(10);
-        if(time2 % 50 == 0 && time2 % 100 != 0 && time2 % 150!= 0){
-            con.print(0,0, "ERROR: %f           ", float(error));
-        }
-         if(time2 % 50 == 0 && time2 % 100 != 0){
-            con.print(2,0, "EncoderAVG: %f           ", float(imu.get_heading()));
-        }
-         if(time2 % 50 == 0){
-            con.print(1,0, "Time2: %f           ", float(time2));
-        }
+        // if(time2 % 50 == 0 && time2 % 100 != 0 && time2 % 150!= 0){
+        //     con.print(0,0, "time2: %f           ", float(time2));
+        // }
+        //  if(time2 % 50 == 0 && time2 % 100 != 0){
+        //     con.print(2,0, "TrueTarget: %f           ", float(trueTarget));
+        // }
+        //  if(time2 % 50 == 0){
+        //     con.print(1,0, "error %f           ", float(error));
+        // }
         
         
         time2 += 10;
