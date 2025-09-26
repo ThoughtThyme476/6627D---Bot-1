@@ -14,20 +14,20 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 2;
+int atn = 1;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
 
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
-}
+// void on_center_button() {
+// 	static bool pressed = false;
+// 	pressed = !pressed;
+// 	if (pressed) {
+// 		pros::lcd::set_text(2, "I was pressed!");
+// 	} else {
+// 		pros::lcd::clear_line(2);
+// 	}
+// }
 
 LV_IMG_DECLARE(Image);
 void initialize() {
@@ -85,11 +85,11 @@ while(true){
 			con.print(0,0, "Aut 4: %s", autstr);
 		}
 		else if (atn ==5) {
-			autstr = "BLUE GOAL Q";
+			autstr = "Straight";
 			con.print(0,0, "Aut 5: %s", autstr);
 		}
 		else if (atn ==6) {
-			autstr = "RED GOAL Q";
+			autstr = "Straight2";
 			con.print(0,0, "Aut 6: %s", autstr);
 		}
 		else if (atn ==7) {
@@ -157,43 +157,21 @@ if (tankToggle){
 
 if (arcToggle) {
 LF.move(right);
-LM.move(right);
-LB.move(right);
+LM.move(left);
+LB.move(left);
 RF.move(left);
-RM.move(left);
-RB.move(left);
+RM.move(right);
+RB.move(right);
 }
 
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	slow = !slow;
-	// Intake1.move(-127);
-	// MainIntake.move(-127);
-	// driveSortHoldblue(2200, 15);
+	// // Intake1.move(-127);
+	// // MainIntake.move(-127);
+	// // driveSortHoldblue(2200, 15);
+	// driveStraight2(2500);
 }
-  if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)) {
-	IntakePiston = !IntakePiston;
-	 }
- TongueMech.set_value(IntakePiston);
-
-   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_Y)) {
-	MidHood = !MidHood;
-	basket = !basket;
-	 }
- MiddleHood.set_value(MidHood);
- Basket.set_value(basket);
-
-   if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)) {
-	basket = !basket;
-	 }
- Basket.set_value(basket);
-
-  if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_RIGHT)) {
-	Tophood = !Tophood;
-	basket = !basket;
-	 }
- TopHood.set_value(Tophood);
- Basket.set_value(basket);
 
  if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	if(slow == true){
