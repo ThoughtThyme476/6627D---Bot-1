@@ -12,12 +12,16 @@ extern pros::Motor RM;
 extern pros::Motor RB;
 
 extern pros::Motor Intake1;
+extern pros::Motor Intake2;
 extern pros::Motor MainIntake;
 extern pros::Imu imu;
 extern pros::Optical eyes; 
 extern pros::Rotation roto;
-extern pros::Distance dist_left;
-extern pros::Distance dist_right;
+extern pros::Distance distLeft;
+extern pros::Distance distRight;
+extern pros::Distance distFront;
+extern pros::Distance distBack;
+extern pros::Distance Toggle;
 extern pros::Controller con;
 extern pros::Distance Counter;
 

@@ -103,8 +103,8 @@ void updateParticleWithMotion() {
 }
 
 void updateParticlesWithSensor() {
-    int32_t z_left = dist_left.get();
-    int32_t z_right = dist_right.get();
+    int32_t z_left = distLeft.get();
+    int32_t z_right = distRight.get();
     if(z_left < 0) z_left = FIELD_WIDTH;
     if(z_right < 0) z_right = FIELD_LENGTH;
 

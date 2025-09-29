@@ -91,10 +91,10 @@ namespace SensorTracker {
 }
 
 // Declare sensors with proper port numbers
-static pros::Distance distFront(1);  // Change these port numbers
-static pros::Distance distBack(2);   // to match your actual
-static pros::Distance distLeft(3);   // sensor port connections
-static pros::Distance distRight(4);  // on the brain
+// static pros::Distance distFront(1);  // Change these port numbers
+// static pros::Distance distBack(2);   // to match your actual
+// static pros::Distance distLeft(3);   // sensor port connections
+// static pros::Distance distRight(4);  // on the brain
 
 static uint32_t lastPrintTime = 0;
 
@@ -166,7 +166,7 @@ namespace Navigation {
             chasMove(0,0,0,0,0,0);
             return false;
         }
-
+        
         // Get current position
         double currentX = SensorTracker::getX();
         double currentY = SensorTracker::getY();

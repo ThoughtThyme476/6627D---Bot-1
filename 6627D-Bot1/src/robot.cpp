@@ -18,7 +18,8 @@
 #define DISTANCE_PORT2 14
 #define DISTANCE_PORT3 15
 #define DISTANCE_PORT4 16
-#define ROTATION_PORT 17
+#define DISTANCE_PORT5 17
+#define ROTATION_PORT 18
 
 pros::Motor LF (LF_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
 pros::Motor LM (LM_PORT, pros::E_MOTOR_GEARSET_06, true); //keep
@@ -34,8 +35,11 @@ pros::Motor MainIntake (MainIntake_PORT, pros::E_MOTOR_GEARSET_06, true);
 pros::Imu imu(IMU_PORT);
 pros::Optical eyes(OPTICAL_PORT);
 pros::Rotation roto(ROTATION_PORT);
-pros::Distance dist_left (DISTANCE_PORT);
-pros::Distance dist_right (DISTANCE_PORT2);
+pros::Distance distLeft (DISTANCE_PORT);
+pros::Distance distRight (DISTANCE_PORT2);
+pros::Distance distFront (DISTANCE_PORT3);
+pros::Distance distBack (DISTANCE_PORT4);
+pros::Distance Toggle (DISTANCE_PORT5);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
 pros::Distance Counter (DISTANCE_PORT3);
 

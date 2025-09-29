@@ -1,4 +1,3 @@
-
 #include "main.h"
 #include "api.h"
 #include "pid.h"
@@ -113,24 +112,13 @@ void opcontrol() {
 
 // setPosition(0,0,0);
 bool arcToggle = true;
-bool tankToggle=false;
-bool StakeWingToggle=false;
-double liftAngle=true;
-int time =0;
-bool hooks_Macro = false;
-bool  hooks_Macro_Rev = false;
-bool fishy_macro = false;
-bool return_fishmech = false;
-bool  IntakePiston = false;
-bool MidHood = false;
-bool basket = false;
-bool Tophood = false;
-bool LBC = false;
-bool IntakeTune = false;
-int Macro = 0;
-eyes.set_led_pwm(100);
-//delay(3000);
+bool tankToggle = false;
+bool GoalToggle = true;
 bool slow = false;
+int time = 0;
+int tuneDist = 18;
+eyes.set_led_pwm(100);
+
 
 while (true) {
 
@@ -157,42 +145,138 @@ if (tankToggle){
 
 if (arcToggle) {
 LF.move(right);
-LM.move(left);
-LB.move(left);
+LM.move(right);
+LB.move(right);
 RF.move(left);
-RM.move(right);
-RB.move(right);
+RM.move(left);
+RB.move(left);
 }
+
+
+
+const int UPPER_THRESHOLD = tuneDist + 2;
+const int LOWER_THRESHOLD = tuneDist - 2;
+
+if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER_DIGITAL_R2)){ 
+    GoalToggle = false;
+} else if((Toggle.get() > LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER_DIGITAL_R2)){
+    GoalToggle = true;
+} else {
+	GoalToggle = NULL;
+}
+// Values between LOWER_THRESHOLD and UPPER_THRESHOLD maintain previous state
 
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	slow = !slow;
-	// // Intake1.move(-127);
-	// // MainIntake.move(-127);
-	// // driveSortHoldblue(2200, 15);
-	// driveStraight2(2500);
 }
 
- if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+// if(GoalToggle == false){
+// if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+// 	if(slow == true){
+// 	Intake1.move(-100);
+// 	Intake2.move(-100);
+// 	MainIntake.move(-100);
+// 	} else {
+// 	Intake1.move(-127);
+// 	MainIntake.move(-127);
+// 	Intake2.move(-127);
+// 	}
+// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
+// 	if(slow == true){
+// 	Intake1.move(100);
+// 	Intake2.move(100);
+// 	MainIntake.move(100);
+// 	} else {
+// 	Intake1.move(127);
+// 	MainIntake.move(127);
+// 	Intake2.move(127);
+// 	}
+// } else {
+// 	Intake1.move(0);
+// 	MainIntake.move(0);
+// 	Intake2.move(0);
+// 	}	
+// } else if (GoalToggle == true){
+
+// 	if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+// 	if(slow == true){
+// 	Intake1.move(-100);
+// 	Intake2.move(100);
+// 	MainIntake.move(-100);
+// 	} else {
+// 	Intake1.move(-127);
+// 	MainIntake.move(-127);
+// 	Intake2.move(127);
+// 	}
+// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
+// 	if(slow == true){
+// 	Intake1.move(100);
+// 	Intake2.move(-100);
+// 	MainIntake.move(100);
+// 	} else {
+// 	Intake1.move(127);
+// 	MainIntake.move(127);
+// 	Intake2.move(-127);
+// 	}
+// } else {
+// 	Intake1.move(0);
+// 	MainIntake.move(0);
+// 	Intake2.move(0);
+// 	}	
+// } else if (GoalToggle == NULL){
+// 		if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
+// 	if(slow == true){
+// 	Intake1.move(-100);
+// 	Intake2.move(100);
+// 	MainIntake.move(-100);
+// 	} else {
+// 	Intake1.move(-127);
+// 	MainIntake.move(-127);
+// 	Intake2.move(127);
+// 	}
+// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
+// 	if(slow == true){
+// 	Intake1.move(100);
+// 	Intake2.move(-100);
+// 	MainIntake.move(100);
+// 	} else {
+// 	Intake1.move(127);
+// 	MainIntake.move(127);
+// 	Intake2.move(-127);
+// 	}
+// } else {
+// 	Intake1.move(0);
+// 	MainIntake.move(0);
+// 	Intake2.move(0);
+// 	}
+// }
+
+if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
 	if(slow == true){
 	Intake1.move(-100);
+	Intake2.move(-100);
 	MainIntake.move(-100);
 	} else {
 	Intake1.move(-127);
 	MainIntake.move(-127);
+	Intake2.move(-127);
 	}
 } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
 	if(slow == true){
-	Intake1.move(60);
-	MainIntake.move(60);
+	Intake1.move(100);
+	Intake2.move(100);
+	MainIntake.move(100);
 	} else {
 	Intake1.move(127);
 	MainIntake.move(127);
+	Intake2.move(127);
 	}
 } else {
 	Intake1.move(0);
 	MainIntake.move(0);
-}
+	Intake2.move(0);
+	}	
 
 // Standard_AWP_red();
  //printing stuff
