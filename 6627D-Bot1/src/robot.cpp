@@ -9,11 +9,11 @@
 #define RF_PORT 1
 #define RM_PORT 2 
 #define RB_PORT 3 
-#define IMU_PORT 7
-#define Intake1_port 9
+#define IMU_PORT 12
+#define Intake1_port 6
 #define Intake2_port 11
-#define MainIntake_PORT 10
-#define OPTICAL_PORT 12
+#define MainIntake_PORT 7
+#define OPTICAL_PORT 19
 #define DISTANCE_PORT 13
 #define DISTANCE_PORT2 14
 #define DISTANCE_PORT3 15
@@ -43,8 +43,8 @@ pros::Distance Toggle (DISTANCE_PORT5);
 pros::Controller con (pros::E_CONTROLLER_MASTER);
 pros::Distance Counter (DISTANCE_PORT3);
 
-pros::ADIDigitalOut TongueMech ('D',false);
-pros::ADIDigitalOut MiddleHood ('A',false);
-pros::ADIDigitalOut Basket('B',false);
-pros::ADIDigitalOut TopHood('E', false);
+pros::ADIDigitalOut TongueMech ('A',false);
+pros::ADIDigitalOut MiddleHood ('D',false);
+pros::ADIDigitalOut Descore('C',false);
+pros::ADIDigitalOut Park('B', false);
 pros::ADIDigitalIn selec ('H');

@@ -107,3 +107,31 @@ void stanleyTask(void*) {
     pros::delay(10); // 10 ms
   }
 }
+
+
+/*
+I just skimmed the stanley.cpp file and two things stood out as strange - though it's a bit hard to know for sure without running the code or knowing what you're trying to do:
+
+1:
+
+Pose getPose() {
+    static Pose p{0,0,0};
+    return p;
+}
+
+What's the intent here? It seems that we are calculating the steering command from our current pose, I would have expected that we read the current pose from somewhere instead of always starting from 0,0
+
+2:
+
+std::pair<Pose, size_t> nearestPoint(const Pose& p, const std::vector<waypoint>& path) {
+    double bestDist2 = 1e9;
+    Pose bestPt;
+    size_t idx = 0;
+    for(size_t i=0; i+1<path.size();++i){
+        ...
+    }
+
+    double dx = path [idx+1].x - path[idx].x;
+    double dy = path [idx+1].y - path[idx].y;
+
+Note that if we call this function with a path size < 2, you'll get a crash: the for loop will never enter and idx will be zero, and idx + 1 will crash. I assume we will not call this function with a path size == 1, but written as is the function isn't very robust.*/

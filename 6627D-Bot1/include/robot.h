@@ -26,8 +26,8 @@ extern pros::Controller con;
 extern pros::Distance Counter;
 
 
-extern pros::ADIDigitalOut MiddleHood;
-extern pros::ADIDigitalOut Basket;
+extern pros::ADIDigitalOut Park;
+extern pros::ADIDigitalOut Descore;
 extern pros::ADIDigitalOut TongueMech;
 extern pros::ADIDigitalOut TopHood;
 extern pros::ADIDigitalIn selec;

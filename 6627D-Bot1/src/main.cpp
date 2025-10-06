@@ -117,7 +117,13 @@ bool GoalToggle = true;
 bool slow = false;
 int time = 0;
 int tuneDist = 18;
+bool Storage = false;
+bool DescoreToggle = false;
+bool MatchLoad = false;
+bool park = false;
 eyes.set_led_pwm(100);
+int intakeMode = 0; // 0-3 for different intake modes
+int number = 0;
 
 
 while (true) {
@@ -161,130 +167,134 @@ if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER
     GoalToggle = false;
 } else if((Toggle.get() > LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER_DIGITAL_R2)){
     GoalToggle = true;
-} else {
-	GoalToggle = NULL;
-}
+} //else {
+// 	GoalToggle = NULL;
+// }
 // Values between LOWER_THRESHOLD and UPPER_THRESHOLD maintain previous state
 
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	slow = !slow;
+	// slow = !slow;
+
+	driveTurn2(175);
 }
 
-// if(GoalToggle == false){
-// if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
-// 	if(slow == true){
-// 	Intake1.move(-100);
-// 	Intake2.move(-100);
-// 	MainIntake.move(-100);
-// 	} else {
-// 	Intake1.move(-127);
-// 	MainIntake.move(-127);
-// 	Intake2.move(-127);
-// 	}
-// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
-// 	if(slow == true){
-// 	Intake1.move(100);
-// 	Intake2.move(100);
-// 	MainIntake.move(100);
-// 	} else {
-// 	Intake1.move(127);
-// 	MainIntake.move(127);
-// 	Intake2.move(127);
-// 	}
-// } else {
-// 	Intake1.move(0);
-// 	MainIntake.move(0);
-// 	Intake2.move(0);
-// 	}	
-// } else if (GoalToggle == true){
 
-// 	if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
-// 	if(slow == true){
-// 	Intake1.move(-100);
-// 	Intake2.move(100);
-// 	MainIntake.move(-100);
-// 	} else {
-// 	Intake1.move(-127);
-// 	MainIntake.move(-127);
-// 	Intake2.move(127);
-// 	}
-// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
-// 	if(slow == true){
-// 	Intake1.move(100);
-// 	Intake2.move(-100);
-// 	MainIntake.move(100);
-// 	} else {
-// 	Intake1.move(127);
-// 	MainIntake.move(127);
-// 	Intake2.move(-127);
-// 	}
-// } else {
-// 	Intake1.move(0);
-// 	MainIntake.move(0);
-// 	Intake2.move(0);
-// 	}	
-// } else if (GoalToggle == NULL){
-// 		if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
-// 	if(slow == true){
-// 	Intake1.move(-100);
-// 	Intake2.move(100);
-// 	MainIntake.move(-100);
-// 	} else {
-// 	Intake1.move(-127);
-// 	MainIntake.move(-127);
-// 	Intake2.move(127);
-// 	}
-// } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
-// 	if(slow == true){
-// 	Intake1.move(100);
-// 	Intake2.move(-100);
-// 	MainIntake.move(100);
-// 	} else {
-// 	Intake1.move(127);
-// 	MainIntake.move(127);
-// 	Intake2.move(-127);
-// 	}
-// } else {
-// 	Intake1.move(0);
-// 	MainIntake.move(0);
-// 	Intake2.move(0);
-// 	}
-// }
+// Mode toggle with A button
+if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_Y)) {
+    intakeMode = intakeMode + 1;
+    if (intakeMode > 2) intakeMode = 0;
+    con.print(0, 0, "Mode: %d", intakeMode);
+}
 
-if (con.get_digital(E_CONTROLLER_DIGITAL_R1)){
-	if(slow == true){
-	Intake1.move(-100);
-	Intake2.move(-100);
-	MainIntake.move(-100);
-	} else {
-	Intake1.move(-127);
-	MainIntake.move(-127);
-	Intake2.move(-127);
-	}
-} else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)){
-	if(slow == true){
-	Intake1.move(100);
-	Intake2.move(100);
-	MainIntake.move(100);
-	} else {
-	Intake1.move(127);
-	MainIntake.move(127);
-	Intake2.move(127);
-	}
-} else {
-	Intake1.move(0);
-	MainIntake.move(0);
-	Intake2.move(0);
-	}	
+// Intake control based on mode
+switch(intakeMode) {
+    case 0: // Mode 0
+        if (con.get_digital(E_CONTROLLER_DIGITAL_R1)) {
+            	if(slow == true){
+				Intake1.move(100);
+				Intake2.move(100);
+				MainIntake.move(-100);
+				} else {
+			Intake1.move(127);
+			MainIntake.move(-127);
+			Intake2.move(127);
+			}
+        } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)) {
+            	if(slow == true){
+			Intake1.move(-100);
+			Intake2.move(-100);
+			MainIntake.move(100);
+			} else {
+			Intake1.move(-127);
+			MainIntake.move(127);
+			Intake2.move(-127);
+			} 
+        } else {
+            // Stop motors when no buttons pressed
+            Intake1.move(0);
+            MainIntake.move(0);
+            Intake2.move(0);
+        }
+        break;
 
-// Standard_AWP_red();
- //printing stuff
-// Odometry2();
+    case 1: // Mode 1
+        if (con.get_digital(E_CONTROLLER_DIGITAL_R1)) {
+              	if(slow == true){
+				Intake1.move(-100);
+				Intake2.move(100);
+				MainIntake.move(-100);
+				} else {
+			Intake1.move(-127);
+			MainIntake.move(-107);
+			Intake2.move(127);
+			}
+        } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)) {
+              	if(slow == true){
+			Intake1.move(-100);
+			Intake2.move(100);
+			MainIntake.move(100);
+			} else {
+			Intake1.move(-127);
+			MainIntake.move(127);
+			Intake2.move(127);
+			} 
+        } else {
+            Intake1.move(0);
+            MainIntake.move(0);
+            Intake2.move(0);
+        }
+        break;
+
+    case 2: // Mode 2
+        if (con.get_digital(E_CONTROLLER_DIGITAL_R1)) {
+                 	if(slow == true){
+				Intake1.move(-100);
+				Intake2.move(-100);
+				MainIntake.move(-100);
+				} else {
+			Intake1.move(-127);
+			MainIntake.move(-107);
+			Intake2.move(-127);
+			}
+        } else if (con.get_digital(E_CONTROLLER_DIGITAL_R2)) {
+               	if(slow == true){
+			Intake1.move(100);
+			Intake2.move(100);
+			MainIntake.move(100);
+			} else {
+			Intake1.move(127);
+			MainIntake.move(127);
+			Intake2.move(127);
+			} 
+        } else {
+            Intake1.move(0);
+            MainIntake.move(0);
+            Intake2.move(0);
+        }
+        break;
+}
+
+if(con.get_digital_new_press(E_CONTROLLER_DIGITAL_B)){
+	park = !park;
+}
+Park.set_value(park); 
+
+if(con.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
+	MatchLoad = !MatchLoad;
+}
+TongueMech.set_value(MatchLoad); 
+
+if(con.get_digital_new_press(E_CONTROLLER_DIGITAL_RIGHT)){
+	DescoreToggle = !DescoreToggle;
+}
+Descore.set_value(DescoreToggle); 
+
+
 double Intake_temp = ((Intake1.get_temperature()));
 double  chasstemp = (((RF.get_temperature() + RB.get_temperature() + LF.get_temperature() + LB.get_temperature())/4)*(9/5)+32);
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
-    con.print(0,0,"number:%f       ", float(number));//viewTime
+    con.print(0,0,"time:%f       ", float(time2));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
     con.print(1,0,"error%f      ", float(time2));
 } else if (time % 150 == 0){
@@ -297,7 +307,7 @@ if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
 //         con.print(1,0, "error: %.1f mm     ", float(error));
 //     } else if (time % 150 == 0) {
 //         con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
-    }
+    //}
 
 delay(10);
 time += 10;
@@ -305,3 +315,4 @@ time += 10;
 }
 
 
+}
