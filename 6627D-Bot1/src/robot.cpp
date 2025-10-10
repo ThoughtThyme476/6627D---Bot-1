@@ -13,8 +13,8 @@
 #define Intake1_port 6
 #define Intake2_port 11
 #define MainIntake_PORT 7
-#define OPTICAL_PORT 19
-#define DISTANCE_PORT 13
+#define OPTICAL_PORT 13
+#define DISTANCE_PORT 19
 #define DISTANCE_PORT2 14
 #define DISTANCE_PORT3 15
 #define DISTANCE_PORT4 16
@@ -47,4 +47,4 @@ pros::ADIDigitalOut TongueMech ('A',false);
 pros::ADIDigitalOut MiddleHood ('D',false);
 pros::ADIDigitalOut Descore('C',false);
 pros::ADIDigitalOut Park('B', false);
-pros::ADIDigitalIn selec ('H');
+pros::ADIDigitalIn selec ('F');

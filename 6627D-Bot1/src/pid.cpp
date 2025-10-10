@@ -46,7 +46,7 @@ float error2;
 int integral2;
 int derivitive2;
 int time3;
-// round three of variables :/ :/
+// round three of variables :/ :/ 
 double vKp3;
 double vKi3;
 double vKd3;
@@ -75,6 +75,39 @@ int time5;
 // other variables
 double trueTarget = 0;
 int color;    
+   bool InitColor = false;
+bool InitCorrect = false;
+int ColorCount;
+bool Backwards = false;
+bool stuck = false;
+int stuck_time = 0;
+
+// void StallProt(){
+//     prevhookpos = hookspos;
+//     hookspos = MainIntake.get_position();
+//  if(hookspos == prevhookpos){
+//                 stuck_time += 10;
+//             } else {
+//                 stuck_time = 0;
+//             }
+//             if(stuck_time > 100){
+//                 stuck = true;
+//                 stuck_time = 0;
+//             }
+                
+//             if(stuck){
+//                         MainIntake.move(-127);
+//                         stallTime+= 10;
+//                         if (stallTime >= 100){
+//                             stuck = false;
+//                             stallTime = 0;
+//                         }
+//                 } else { 
+//                     stuck = false;
+//                     MainIntake.move(127);
+//                 }
+//             MainIntake.tare_position();
+//         }
 
 void Counting (){
     int time = 0;
@@ -113,11 +146,25 @@ void IntakeStopper(int SecVoltage, int choose){ // 1 = anti red, 2 = anti blue
     }
 }
 
-void setConstants(double kp, double ki, double kd){
+// Add structured PID variables instead of globals
+struct PIDController {
+    double kp;
+    double ki;
+    double kd;
+    double error = 0;
+    double prevError = 0;
+    double integral = 0;
+    double power = 0;
+};
 
-    vKp = kp;
-    vKi = ki;
-    vKd = kd;
+PIDController straightPID;
+PIDController turnPID;
+
+// Replace global variables with structured approach
+void setConstants(double kp, double ki, double kd) {
+    straightPID.kp = kp;
+    straightPID.ki = ki;
+    straightPID.kd = kd;
 }
  void resetEncoders(){
 
@@ -148,6 +195,7 @@ double calcPID(double target, double input, int integralKI, int maxIntegral){
     //replaced text;
 //    ColorSort();
   // StallProtection();
+  //StallProt();
   
     //sigma boy//
     int integral;
@@ -268,7 +316,7 @@ void driveStraight(int target) {
 
     double x = 0;
     x = double(abs(target));
-     timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;
+    timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     imu.tare();
 
     
@@ -464,7 +512,7 @@ void driveStraight(int target) {
    // setConstants(TURN_KP, TURN_KI, TURN_KD); 
     while(true) { 
 
-    if(abs(error) <= 3){
+        if(abs(error) <= 3){
         setConstants(16.5, 0, 0);
     } else{
          setConstants(TURN_KP, TURN_KI, TURN_KD); 
@@ -505,10 +553,10 @@ void driveStraight(int target) {
             con.print(0,0, "ERROR: %f           ", float(error));
         }
          if(time2 % 50 == 0 && time2 % 100 != 0){
-            con.print(2,0, "EncoderAVG: %f           ", float(imu.get_heading()));
+            con.print(1,0, "time: %f           ", float(time2));
         }
-         if(time2 % 50 == 0){
-            con.print(1,0, "Time2: %f           ", float(time2));
+         if(time2 % 150 == 0){
+            con.print(2,0, "pos: %f           ", float(power));
         }
         
         time2 += 10;
@@ -591,7 +639,7 @@ void driveTurnT(int target){
      } else {
         turnv = abs(abs(position) - abs(target));
      }
-        voltage = calcPID4(target, position, TURN_INTRGRAL_KI, TURN_MAX_INTEGRAL);
+        voltage = calcPID(target, position, TURN_INTRGRAL_KI, TURN_MAX_INTEGRAL);
 
         chasMove(voltage, voltage, voltage, - voltage, - voltage, - voltage);
 
@@ -629,7 +677,7 @@ void driveStraight2(int target) {
 
     double x = 0;
     x = double(abs(target));
-    timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;0.000000000000867575* pow(x,5) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;
+      timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     double voltage;
     double encoderAVG;
     int count = 0;
@@ -722,7 +770,7 @@ void driveStraightRush(int target) {
 
     double x = 0;
     x = double(abs(target));
-      timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000678761* pow(x,5) + (  0.00000000322532 * pow(x,4)) + (-0.0000048573 * pow(x,3)) + (0.00267799 * pow(x,2)) + (0.374357 * x) + 293.09196;
+       timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     double voltage;
     double encoderAVG;
     int count = 0;
@@ -815,7 +863,7 @@ void driveStraightC(int target) {
 
     double x = 0;
     x = double(abs(target));
-    timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000834034* pow(x,5) + (  0.0000000039332 * pow(x,4)) + (-0.00000587102 * pow(x,3)) + (0.00326685 * pow(x,2)) + (0.239046 * x) + 302.29435;
+      timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     if (target > 0){ 
     target = target + 500;
  } else{
@@ -1119,7 +1167,7 @@ void driveSortHoldRed(int target, int speed) {
 
     double x = 0;
     x = double(abs(target));
-   timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000834034* pow(x,5) + (  0.0000000039332 * pow(x,4)) + (-0.00000587102 * pow(x,3)) + (0.00326685 * pow(x,2)) + (0.239046 * x) + 302.29435;
+     timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     double voltage;
     double encoderAVG;
     int count = 0;
@@ -1222,7 +1270,7 @@ void driveSortHoldblue(int target, int speed) {
 
     double x = 0;
     x = double(abs(target));
-   timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000834034* pow(x,5) + (  0.0000000039332 * pow(x,4)) + (-0.00000587102 * pow(x,3)) + (0.00326685 * pow(x,2)) + (0.239046 * x) + 302.29435;
+     timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
     double voltage;
     double encoderAVG;
     int count = 0;
@@ -1324,7 +1372,7 @@ void driveSortHoldRedC(int target, int speed) {
     bool over = false;
     double x = 0;
     x = double(abs(target));
-     timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000678761* pow(x,5) + (  0.00000000322532 * pow(x,4)) + (-0.0000048573 * pow(x,3)) + (0.00267799 * pow(x,2)) + (0.374357 * x) + 293.09196; 
+       timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788; 
       timeout = timeout * (2 - (double(speed)/100.0));
 
     double voltage;
@@ -1359,20 +1407,6 @@ if(trueTarget > 180) {
       if(position > 180){
         position = position - 360;
       }
-
-    if((trueTarget < 0) && (position > 0)){
-        if((position - trueTarget ) >= 180){
-            trueTarget = trueTarget + 360;
-            position = imu.get_heading();
-        }
-    } else if((trueTarget > 0) && (position < 0)){
-        if ((trueTarget - position) >= 180){
-            position = imu.get_heading();
-        }
-     }
-    
-    setConstants(HEADING_KP, HEADING_KI, HEADING_KD);  
-        headingError = calcPID2(trueTarget, position, HEADING_INTEGRAL_KI, HEADING_MAX_INTEGRAL);
 
         if(voltage > 127 * double(speed)/100){
             voltage = 127 * double(speed)/100;
@@ -1430,7 +1464,7 @@ void driveSortHoldblueC(int target, int speed){
     bool over = false;
     double x = 0;
     x = double(abs(target));
-       timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000678761* pow(x,5) + (  0.00000000322532 * pow(x,4)) + (-0.0000048573 * pow(x,3)) + (0.00267799 * pow(x,2)) + (0.374357 * x) + 293.09196;  
+         timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;  
      timeout = timeout * (2 - (double(speed)/100.0));
 
     double voltage;
@@ -1537,7 +1571,7 @@ void driveStraightSlow(int target, int speed) {
 
     double x = 0;
     x = double(abs(target));
-     timeout = (0.000000000000867575* pow(x,5)) + (-0.00000000416677 * pow(x,4)) + (0.00000675805 * pow(x,3)) + (-0.00521791 * pow(x,2)) + (-0.00521791 * x) + 433.22097;-0.000000000000678761* pow(x,5) + (  0.00000000322532 * pow(x,4)) + (-0.0000048573 * pow(x,3)) + (0.00267799 * pow(x,2)) + (0.374357 * x) + 293.09196;  
+       timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;  
      timeout = timeout * (2 - (double(speed)/100.0));
     double voltage;
     double encoderAVG;

@@ -13,7 +13,7 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 1;
+int atn = 3;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
@@ -124,6 +124,7 @@ bool park = false;
 eyes.set_led_pwm(100);
 int intakeMode = 0; // 0-3 for different intake modes
 int number = 0;
+bool autoPark = false;
 
 
 while (true) {
@@ -174,10 +175,10 @@ if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER
 
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	// slow = !slow;
+	driveStraight2(2500);
+	//driveTurn2(90);
 
-	driveTurn2(175);
-}
+		}
 
 
 // Mode toggle with A button
@@ -204,7 +205,7 @@ switch(intakeMode) {
             	if(slow == true){
 			Intake1.move(-100);
 			Intake2.move(-100);
-			MainIntake.move(100);
+			MainIntake.move(60);
 			} else {
 			Intake1.move(-127);
 			MainIntake.move(127);
@@ -233,7 +234,7 @@ switch(intakeMode) {
               	if(slow == true){
 			Intake1.move(-100);
 			Intake2.move(100);
-			MainIntake.move(100);
+			MainIntake.move(60);
 			} else {
 			Intake1.move(-127);
 			MainIntake.move(127);
@@ -261,7 +262,7 @@ switch(intakeMode) {
                	if(slow == true){
 			Intake1.move(100);
 			Intake2.move(100);
-			MainIntake.move(100);
+			MainIntake.move(60);
 			} else {
 			Intake1.move(127);
 			MainIntake.move(127);
@@ -296,7 +297,7 @@ double  chasstemp = (((RF.get_temperature() + RB.get_temperature() + LF.get_temp
 if (time % 50 == 0 && time % 100 !=0 && time % 150 !=0){
     con.print(0,0,"time:%f       ", float(time2));//viewTime
 } else if (time% 100 == 0 && time % 150 !=0){
-    con.print(1,0,"error%f      ", float(time2));
+    con.print(1,0,"error%f      ", float(error));
 } else if (time % 150 == 0){
     con.print(2,0,"C:%i MI:%i IM:%i      ",int(chasstemp), int(Intake_temp), int((MainIntake.get_temperature())));
 }

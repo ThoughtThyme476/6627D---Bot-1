@@ -4,374 +4,229 @@
 #include "robot.h"
 #include "auton.h"
 #include "odom.h"
+#include <vector>
+#include <algorithm>
 
 using namespace pros;
 using namespace std;
 
-int turnv = 0;
+// Constants
+constexpr double PI = 3.14159265359;
+constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
+constexpr double TICKS_PER_REV_ROTO = 36000.0;  // rotation sensor reports centidegrees
+constexpr double WHEEL_RADIUS_X_IN = 3.25;      // drive wheel radius (forward movement) [inches]
+constexpr double WHEEL_RADIUS_Y_IN = 2.0;       // tracking wheel radius (lateral movement) [inches]
+constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
+constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
+constexpr double INCH_TO_MM = 25.4;
+constexpr double POSITION_TOLERANCE = 5.0;       // mm
+constexpr double TIMEOUT_MS = 3000;             // 3 second timeout
 
-double absoluteAngleToTarget = 0;
-double position = 0;
+// Global state variables (minimized)
+struct OdomState {
+    float x_pos = 0;
+    float y_pos = 0;
+    float heading = 0;
+    uint32_t update_time = 0;
+};
+OdomState state;
 
-float deltaX;
-float deltaY;
+struct TuningParams {
+    double straight_kp;
+    double straight_ki;
+    double straight_kd;
+    double turn_kp;
+    double turn_ki;
+    double turn_kd;
+    double score;
+};
 
-float startingX;
-float startingY; 
-float startingHeading;
-
-float r0;
-float r1;
-
-float delta_left_encoder_pos;
-float delta_right_encoder_pos;
-float delta_center_encoder_pos;
-
-float prev_left_encoder_pos;
-float prev_right_encoder_pos;
-float prev_center_encoder_pos;
-
-float left_encoder_pos;
-float right_encoder_pos;
-float center_encoder_pos;
-
-float localX;
-float localY;
-
-float phi;
-
-float prev_imu_pos;
-float imu_pos;
-float imu_pos_radians;
-
-float x_pos;
-float y_pos;
-
-float pi = 3.14159265359; 
-
-int odo_time = 0;
-
-float local_polar_angle;
-float local_polar_length; 
-float global_polar_angle;
-
-void setPosition(float xcoord, float ycoord, float heading){
-startingX = xcoord; 
-startingY = ycoord;
-
-startingHeading = heading;
-
-
-x_pos = startingX;
-y_pos = startingY;
+void setPosition(float xcoord, float ycoord, float heading) {
+    state.x_pos = xcoord;
+    state.y_pos = ycoord;
+    state.heading = heading;
+    imu.tare_rotation();  // Zero the IMU at starting position
 }
 
-void Odometry(){
-
-
-    prev_imu_pos = imu_pos;
-    imu_pos = imu.get_rotation() + startingHeading;
-
-    prev_left_encoder_pos = left_encoder_pos;
-    prev_right_encoder_pos = right_encoder_pos;  
-    prev_center_encoder_pos = center_encoder_pos;
-
-    left_encoder_pos = (LF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
-    right_encoder_pos = (RF.get_position()/360.0)*(36.0/48.0)*(2*pi*1.625);
-    center_encoder_pos = (roto.get_angle()/36000.0)*(2*pi);
-
-    delta_left_encoder_pos = left_encoder_pos - prev_left_encoder_pos;
-    delta_right_encoder_pos = right_encoder_pos - prev_right_encoder_pos;
-    delta_center_encoder_pos = center_encoder_pos - prev_center_encoder_pos;
-
-
-
-    phi = imu_pos - prev_imu_pos;
-    const double dtheta_rad = (pi * phi) / 180.00;
-    const double th_rad = (pi * imu_pos) / 180.00;
-    const double EPS = (pi * IMU_THERSHOLD)/ 180.0;
-
-
- if (fabs(dtheta_rad) < EPS) {
-          // straight-ish: use linearized form
-          localX = (delta_left_encoder_pos + delta_right_encoder_pos) / 2.0;
-          // NOTE: dtheta now radians
-          localY = delta_center_encoder_pos - FORWARD_OFFSET * dtheta_rad;
-        } else {
-          // turning: use exact arc formulas (use radians!)
-          const double avg_lr = (delta_left_encoder_pos + delta_right_encoder_pos) / 2.0;
-          r0 = avg_lr / dtheta_rad;                    // forward radius
-          r1 =  (delta_center_encoder_pos) / dtheta_rad; // lateral radius
-
-          const double s = sin(dtheta_rad);
-          const double c = cos(dtheta_rad);
-
-          localX = r0 * s - r1 * (1.0 - c);
-          localY = r1 * s + r0 * (1.0 - c);
-        }
-
-        // rotate into global frame using absolute heading (radians)
-        deltaY =  localX * cos(th_rad) - localY * sin(th_rad);
-        deltaX =  localX * sin(th_rad) + localY * cos(th_rad);
-
-        x_pos += deltaX;
-        y_pos += deltaY;
-
-        if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0){
-          con.print(0, 0, "x_pos: %f           ", float(x_pos));
-        } else if (odo_time % 100 == 0 && odo_time % 150 != 0){
-          con.print(1, 0, "y_pos: %f           ", float(y_pos));
-        } else if (odo_time % 150 == 0){
-          con.print(2, 0, "Pos: %f        ", float(position)); // FYI: 'position' never updates
-        }
-
-        odo_time += 10; // assumes caller delays ~10ms per loop
+void applyTuningParams(const TuningParams& p) {
+    setConstants(p.straight_kp * 5, p.straight_ki * 5, p.straight_kd * 5); // For straight movement
+    setConstants(p.turn_kp, p.turn_ki, p.turn_kd);  // For turning
 }
-
-
-
-// void Odometry2() {
-//     // --- Constants ---
-//     constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
-//     constexpr double TICKS_PER_REV_ROTO  = 36000.0; // rotation sensor reports centidegrees
-//     constexpr double WHEEL_RADIUS_X_IN   = 3.25;    // drive wheel radius (forward movement) [inches]
-//     constexpr double WHEEL_RADIUS_Y_IN   = 2.0;     // tracking wheel radius (lateral movement) [inches]
-//     constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
-//     constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
-//     constexpr double INCH_TO_MM = 25.4;
-
-//     const double WHEEL_RADIUS_X_MM = WHEEL_RADIUS_X_IN * INCH_TO_MM;
-//     const double WHEEL_RADIUS_Y_MM = WHEEL_RADIUS_Y_IN * INCH_TO_MM;
-
-//     const double DEG2RAD = pi / 180.0;
-//     const double THRESH  = IMU_THERSHOLD * DEG2RAD;
-
-//     // --- Save old IMU state ---
-//     prev_imu_pos = imu_pos; 
-//     imu_pos = imu.get_rotation() + startingHeading; // degrees
-//     imu_pos_radians = imu_pos * DEG2RAD;            // radians 
-
-//     // Normalize IMU angle to [-180,180]
-//     if (imu_pos > 180) imu_pos -= 360;
-//     if (imu_pos < -180) imu_pos += 360;
-
-//     // --- Save old encoder states ---
-//     prev_left_encoder_pos   = left_encoder_pos;
-//     prev_right_encoder_pos  = right_encoder_pos;
-
-//     // --- Forward/backward distance from drive motor encoders ---
-//     double left_rev  = (LF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
-//     double right_rev = (RF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
-//     double revX      = (left_rev + right_rev) / 2.0;  // average L+R
-
-//     // convert to mm
-//     left_encoder_pos  = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
-
-//     // --- Lateral distance from tracking wheel (roto) ---
-//     double revY = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y;
-//     right_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
-
-//     // --- Delta wheel displacements (mm) ---
-//     double dXwheel = left_encoder_pos  - prev_left_encoder_pos;
-//     double dYwheel = right_encoder_pos - prev_right_encoder_pos;
-
-//     // --- Heading change (radians) ---
-//     phi = (imu_pos - prev_imu_pos) * DEG2RAD;
-
-//     // --- Local displacement (robot frame, mm) ---
-//     double localX, localY;
-//     if (fabs(phi) < THRESH) {
-//         localX = dXwheel + FORWARD_OFFSET  * phi;
-//         localY = dYwheel + SIDEWAYS_OFFSET * phi;
-//     } else {
-//         double s = 2.0 * sin(phi / 2.0);
-//         localX = s * ((dXwheel / phi) + FORWARD_OFFSET);
-//         localY = s * ((dYwheel / phi) + SIDEWAYS_OFFSET);
-//     }
-
-//     // --- Transform into global frame (mm) ---
-//     double theta_mid = (prev_imu_pos * DEG2RAD) + (phi / 2.0);
-//     double dx = localX * cos(theta_mid) - localY * sin(theta_mid);
-//     double dy = localX * sin(theta_mid) + localY * cos(theta_mid);
-
-//     x_pos += dx; // mm
-//     y_pos += dy; // mm
-
-//     // --- Debug printing (mm + heading in both units) ---
-//     if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0) {
-//         con.print(0,0, "X pos: %.1f mm     ", float(x_pos));
-//     } else if (odo_time % 100 == 0 && odo_time % 150 != 0) {
-//         con.print(1,0, "Y pos: %.1f mm     ", float(y_pos));
-//     } else if (odo_time % 150 == 0) {
-//         con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
-//     }
-
-//     odo_time += 10;
-// }
 
 void Odometry2() {
-    // --- Constants ---
-    constexpr double TICKS_PER_REV_MOTOR = 360.0;   // VEX motor encoder reports degrees
-    constexpr double TICKS_PER_REV_ROTO  = 36000.0; // rotation sensor reports centidegrees
-    constexpr double WHEEL_RADIUS_X_IN   = 3.25;    // drive wheel radius (forward movement) [inches]
-    constexpr double WHEEL_RADIUS_Y_IN   = 2.0;     // tracking wheel radius (lateral movement) [inches]
-    constexpr double GEAR_X = 36.0/48.0;            // motor gear ratio (motor:wheel)
-    constexpr double GEAR_Y = 1.0;                  // tracking wheel gear ratio
-    constexpr double INCH_TO_MM = 25.4;
+    // Convert constants to mm
     const double WHEEL_RADIUS_X_MM = WHEEL_RADIUS_X_IN * INCH_TO_MM;
     const double WHEEL_RADIUS_Y_MM = WHEEL_RADIUS_Y_IN * INCH_TO_MM;
+    const double DEG2RAD = PI / 180.0;
+    const double THRESH = IMU_THERSHOLD * DEG2RAD;
 
-    const double DEG2RAD = pi / 180.0;
-    const double THRESH  = IMU_THERSHOLD * DEG2RAD;
+    // Get current encoder positions
+    static double prev_forward_pos = 0;
+    static double prev_lateral_pos = 0;
+    static double prev_imu_pos = 0;
 
-    double forward_encoder_pos = 0.0;       // mm, forward average (from left/right drive encoders)
-    double prev_forward_encoder_pos = 0.0;
-    double lateral_encoder_pos = 0.0;       // mm, lateral (from tracking wheel)
-    double prev_lateral_encoder_pos = 0.0;
-
-    // --- Tunable offsets (mm) ---
-    // Distance from tracking wheels to the robot’s center
-    static double OFFSET_X = 0.0;  // forward/backward offset (mm)
-    static double OFFSET_Y = 0.0;  // sideways offset (mm)
-
-    // --- Save old IMU state ---
-    prev_imu_pos = imu_pos; 
-    imu_pos = imu.get_rotation() + startingHeading; // degrees
-    imu_pos_radians = imu_pos * DEG2RAD;            // radians 
-
-    // Normalize IMU angle to [-180,180] (in radians for consistency)
-    if (imu_pos_radians > pi) imu_pos_radians -= 2.0 * pi;
-    if (imu_pos_radians < -pi) imu_pos_radians += 2.0 * pi;
-
-    // --- Save old encoder states ---
-    prev_forward_encoder_pos = forward_encoder_pos;
-    prev_lateral_encoder_pos = lateral_encoder_pos;
-
-    // --- Forward/backward distance from drive motor encoders ---
-    double left_rev  = (LF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
+    // Read current positions
+    double left_rev = (LF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
     double right_rev = (RF.get_position() / TICKS_PER_REV_MOTOR) * GEAR_X;
-    double revX      = (left_rev + right_rev) / 2.0;  // average L+R
+    double forward_pos = ((left_rev + right_rev) / 2.0) * (2.0 * PI * WHEEL_RADIUS_X_MM);
+    double lateral_pos = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y * (2.0 * PI * WHEEL_RADIUS_Y_MM);
+    
+    // Get IMU heading in radians
+    double imu_pos = imu.get_rotation() * DEG2RAD;
 
-    // convert to mm
-    forward_encoder_pos = revX * (2.0 * pi * WHEEL_RADIUS_X_MM);
+    // Calculate deltas
+    double dx_wheel = forward_pos - prev_forward_pos;
+    double dy_wheel = lateral_pos - prev_lateral_pos;
+    double d_theta = imu_pos - prev_imu_pos;
 
-    // --- Lateral distance from tracking wheel (roto) ---
-    double revY = (roto.get_position() / TICKS_PER_REV_ROTO) * GEAR_Y;
-    lateral_encoder_pos = revY * (2.0 * pi * WHEEL_RADIUS_Y_MM); // mm
+    // Normalize heading change to [-π, π]
+    if (d_theta > PI) d_theta -= 2.0 * PI;
+    if (d_theta < -PI) d_theta += 2.0 * PI;
 
-    // --- Delta wheel displacements (mm) ---
-    double dXwheel = forward_encoder_pos - prev_forward_encoder_pos;
-    double dYwheel = lateral_encoder_pos - prev_lateral_encoder_pos;
-
-    // --- Heading change (radians) ---
-    phi = imu_pos_radians - (prev_imu_pos * DEG2RAD);
-
-    // --- Local displacement (robot frame, mm) ---
-    double localX, localY;
-    if (fabs(phi) < THRESH) {
-        localX = dXwheel + OFFSET_X * phi;
-        localY = dYwheel + OFFSET_Y * phi;
+    // Calculate local displacement
+    double local_x, local_y;
+    if (fabs(d_theta) < THRESH) {
+        // Straight motion approximation
+        local_x = dx_wheel;
+        local_y = dy_wheel;
     } else {
-        double s = 2.0 * sin(phi / 2.0);
-        localX = s * ((dXwheel / phi) + OFFSET_X);
-        localY = s * ((dYwheel / phi) + OFFSET_Y);
+        // Arc motion calculation
+        double s = 2.0 * sin(d_theta / 2.0);
+        local_x = s * (dx_wheel / d_theta);
+        local_y = s * (dy_wheel / d_theta);
     }
 
-    // --- Transform into global frame (mm) ---
-    double theta_mid = (prev_imu_pos * DEG2RAD) + (phi / 2.0);
-    double dx = localX * cos(theta_mid) - localY * sin(theta_mid);
-    double dy = localX * sin(theta_mid) + localY * cos(theta_mid);
+    // Transform to global coordinates
+    double theta_mid = prev_imu_pos + (d_theta / 2.0);
+    double dx = local_x * cos(theta_mid) - local_y * sin(theta_mid);
+    double dy = local_x * sin(theta_mid) + local_y * cos(theta_mid);
 
-    x_pos += dx; // mm
-    y_pos += dy; // mm
+    // Update state
+    state.x_pos += dx;
+    state.y_pos += dy;
+    state.heading = imu_pos;
 
-    // --- Debug printing (mm + heading in both units) ---
-    if (odo_time % 50 == 0 && odo_time % 100 != 0 && odo_time % 150 != 0) {
-        con.print(0,0, "X pos: %.1f mm     ", float(x_pos));
-    } else if (odo_time % 100 == 0 && odo_time % 150 != 0) {
-        con.print(1,0, "Y pos: %.1f mm     ", float(y_pos));
-    } else if (odo_time % 150 == 0) {
-        con.print(2,0, "Heading: %.1f deg / %.2f rad ", float(imu_pos), float(imu_pos_radians));
+    // Store previous positions
+    prev_forward_pos = forward_pos;
+    prev_lateral_pos = lateral_pos;
+    prev_imu_pos = imu_pos;
+
+    // Debug output (every 50ms rotation)
+    if (state.update_time % 150 == 0) {
+        con.print(0, 0, "X: %.1f Y: %.1f", state.x_pos, state.y_pos);
+        con.print(1, 0, "H: %.1f deg", state.heading * 180.0 / PI);
     }
 
-    odo_time += 10;
+    state.update_time += 10;
 }
 
+bool boomerang(double xTarget, double yTarget) {
+    uint32_t start_time = pros::millis();
+    
+    while (true) {
+        // Check timeout
+        if (pros::millis() - start_time > TIMEOUT_MS) {
+            return false;
+        }
 
-
-
-void boomerang(double xTarget, double yTarget){ // in encoder units. Move robot to the point and check x and Y tracking wheels 
-    double hypot = 0;
-    double voltage = 0;
-    double heading_correction = 0; 
-    int btime = 0;
-    int timeout = 30000;
-    int count = 0;
-
-
-
-    while(true){
         Odometry2();
-        hypot = sqrt(pow((x_pos - xTarget),2) + pow((y_pos - yTarget),2 ));
-        absoluteAngleToTarget = atan2((xTarget - x_pos),(yTarget - y_pos)) * (180/pi);
 
-        if (absoluteAngleToTarget > 180){
-            absoluteAngleToTarget = absoluteAngleToTarget - 360;
+        // Calculate distance and angle to target
+        double dx = xTarget - state.x_pos;
+        double dy = yTarget - state.y_pos;
+        double distance = sqrt(dx*dx + dy*dy);
+        double angle_to_target = atan2(dy, dx) * 180.0/PI;
+
+        // Normalize angles to [-180, 180]
+        while (angle_to_target > 180) angle_to_target -= 360;
+        while (angle_to_target < -180) angle_to_target += 360;
+
+        // Check if we've reached the target
+        if (distance < POSITION_TOLERANCE) {
+            return true;
         }
 
-        position = imu.get_heading();
+        // Calculate heading correction
+        setConstants(TURN_KP, TURN_KI, TURN_KD);
+        double heading_correction = calcPID(angle_to_target, state.heading * 180.0/PI, 
+                                         TURN_INTRGRAL_KI, TURN_MAX_INTEGRAL);
 
-        if (position > 180){
-            position = position - 360;
-        } 
-
-        if ((absoluteAngleToTarget < 0) && (position > 0)){
-            if ((position - absoluteAngleToTarget) >= 180){
-                absoluteAngleToTarget = absoluteAngleToTarget + 360;
-                position = imu.get_heading();
-            } else {
-                turnv = (abs(position) - abs(absoluteAngleToTarget));
-            }
-        } else if ((absoluteAngleToTarget > 0) && (position < 0)){
-
-        if(abs(turnv) > 90){
-            absoluteAngleToTarget = absoluteAngleToTarget - 360;
-            hypot = -hypot; 
-        }
-
-        if(absoluteAngleToTarget >= 359){
-            absoluteAngleToTarget = absoluteAngleToTarget- 360;
-        }
-
-        if((absoluteAngleToTarget < 0) && (position > 0)){
-            if((position - absoluteAngleToTarget) >= 180 ){
-                absoluteAngleToTarget = absoluteAngleToTarget + 360;
-                position = imu.get_heading();
-            }
-
-        } else if ((absoluteAngleToTarget > 0) && (position > 0)){
-            if((absoluteAngleToTarget - position) >= 180){
-                position = imu.get_heading();
-            }
-        }
-        }
-        setConstants(TURN_KP,TURN_KI,TURN_KD);
-        heading_correction = calcPID(absoluteAngleToTarget, position, TURN_INTRGRAL_KI, TURN_MAX_INTEGRAL);
-
+        // Calculate drive voltage
         setConstants(STRAIGHT_KP*5, STRAIGHT_KI*5, STRAIGHT_KD*5);
-        voltage = -calcPID2(0, hypot, STRAIGHT_INTEGRAL_KI, STRAIGHT_MAX_INTEGRAL);
+        double voltage = -calcPID2(0, distance, STRAIGHT_INTEGRAL_KI, STRAIGHT_MAX_INTEGRAL);
 
-        if(voltage > 127){
-            voltage = 127;
-        }else if(voltage > -127) { 
-            voltage = -127;
-        }
+        // Clamp voltage
+        voltage = std::clamp(voltage, -127.0, 127.0);
 
-        if (abs(hypot) < HEADING_CUTOFF){
+        // Disable heading correction near target
+        if (distance < HEADING_CUTOFF) {
             heading_correction = 0;
         }
 
-      chasMove((voltage + heading_correction), (voltage + heading_correction),(voltage +  heading_correction),(voltage + heading_correction),(voltage + heading_correction),(voltage + heading_correction));
-        
+        // Apply motor movements
+        double final_voltage = voltage + heading_correction;
+        chasMove(final_voltage, final_voltage, final_voltage, 
+                 final_voltage, final_voltage, final_voltage);
+
+        pros::delay(10);
     }
+}
+
+void autoTune() {
+    std::vector<TuningParams> params;
+    
+    // Test different PID combinations
+    for(double kp = 0.1; kp <= 1.0; kp += 0.1) {
+        for(double kd = 0.0; kd <= 0.2; kd += 0.05) {
+            TuningParams p = {
+                kp, 0.0, kd,     // Straight PID
+                kp/2, 0.0, kd/2, // Turn PID
+                0.0              // Score
+            };
+            
+            // Reset position
+            setPosition(0, 0, 0);
+            uint32_t start_time = pros::millis();
+            
+            // Run square pattern test
+            std::vector<std::pair<double, double>> test_points = {
+                {1000, 0}, {1000, 1000}, {0, 1000}, {0, 0}
+            };
+            
+            double total_error = 0;
+            
+            for(const auto& point : test_points) {
+                applyTuningParams(p);
+                bool success = boomerang(point.first, point.second);
+                if(!success) {
+                    total_error += 10000; // Penalty for timeout
+                    continue;
+                }
+                
+                total_error += sqrt(pow(point.first - state.x_pos, 2) + 
+                                  pow(point.second - state.y_pos, 2));
+            }
+            
+            p.score = total_error;
+            params.push_back(p);
+            
+            // Display progress
+            pros::lcd::print(0, "Testing KP: %.2f KD: %.2f", kp, kd);
+            pros::lcd::print(1, "Error: %.2f", total_error);
+        }
+    }
+    
+    // Find best parameters
+    auto best = std::min_element(params.begin(), params.end(),
+        [](const TuningParams& a, const TuningParams& b) {
+            return a.score < b.score;
+        });
+        
+    // Display and save best results
+    pros::lcd::print(0, "Best Parameters Found:");
+    pros::lcd::print(1, "Straight KP: %.3f", best->straight_kp);
+    pros::lcd::print(2, "Straight KD: %.3f", best->straight_kd);
+    pros::lcd::print(3, "Turn KP: %.3f", best->turn_kp);
+    pros::lcd::print(4, "Turn KD: %.3f", best->turn_kd);
+    pros::lcd::print(5, "Score: %.2f", best->score);
 }

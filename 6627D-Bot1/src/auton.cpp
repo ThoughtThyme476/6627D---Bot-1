@@ -7,7 +7,7 @@
 
 
   void DriveStraightAuto(){
-    
+
   }
 
  void Standard_AWP_red(){ // done
@@ -15,7 +15,50 @@
 
  }
  void Goal_Rush_red(){ 
+  driveStraightC(300);
+  driveTurn2(-45);
+  MainIntake.move(-127);
+  Intake1.move(127);
+  driveStraightSlow(300, 80);
+  TongueMech.set_value(true);
+  MainIntake.move(127);
+  driveStraightC(30);
+  MainIntake.move(-127);
+  driveStraight2(200);
+  driveTurn2(-140);
+  driveStraightC(-560);
+  Intake2.move(-127);
+  driveStraight2(-15);
+  delay(250);
+  Intake2.move(0);
+  driveTurn2(-130);
+  MainIntake.move(127);
+  driveStraightC(100);
+  MainIntake.move(-127);
+  driveStraight2(1875);
+  driveTurn2(180);
+  driveStraight2(625);
+  TongueMech.set_value(false);
+  //driveTurn2(178);p
+  driveStraight2(-500);
+  MainIntake.move(127);
+  delay(100);
+  MainIntake.move(-120);
+  driveStraightSlow(100, 80);
+  driveTurn2(178);
+  driveStraightC(-565);
+  MainIntake.move(100);
+  driveStraight2(-10);
+  Intake2.move(127);
+  MainIntake.move(-127);
+  Intake1.move(-127);
 
+
+
+
+
+
+  
 
  }
 
