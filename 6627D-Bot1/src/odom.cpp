@@ -31,15 +31,15 @@ struct OdomState {
 };
 OdomState state;
 
-struct TuningParams {
-    double straight_kp;
-    double straight_ki;
-    double straight_kd;
-    double turn_kp;
-    double turn_ki;
-    double turn_kd;
-    double score;
-};
+// struct TuningParams {
+//     double straight_kp;
+//     double straight_ki;
+//     double straight_kd;
+//     double turn_kp;
+//     double turn_ki;
+//     double turn_kd;
+//     double score;
+// };
 
 void setPosition(float xcoord, float ycoord, float heading) {
     state.x_pos = xcoord;

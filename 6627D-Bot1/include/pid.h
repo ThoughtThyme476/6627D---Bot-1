@@ -20,6 +20,7 @@ extern void ColorSort();
 extern void driveStraight(int target);
 extern void driveStraight2(int target);
 extern void driveStraightC(int target);
+extern void driveStraightCslow(int target,int speed);
 extern void driveTurn(int target);
 extern void driveTurn2(int target);
 extern void driveStraightSlow(int target, int speed);

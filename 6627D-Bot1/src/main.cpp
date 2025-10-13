@@ -13,7 +13,7 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 3;
+int atn = 9;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
@@ -46,7 +46,7 @@ void disabled() {
 //void autonomous moved into just auton.cpp
 
 void competition_initialize() {
-	int pressed = 1;
+	int pressed = 0;
 
 
 	
@@ -76,27 +76,27 @@ while(true){
 			con.print(0,0, "Aut 2: %s", autstr);
 		}
 		else if (atn ==3) {
-			autstr = "RED GOAL E";
+			autstr = "75% RED";
 			con.print(0,0, "Aut 3: %s", autstr);
 		}
 		else if (atn ==4) {
-			autstr = "BLUE GOAL E";
+			autstr = "75% BLUE";
 			con.print(0,0, "Aut 4: %s", autstr);
 		}
 		else if (atn ==5) {
-			autstr = "Straight";
+			autstr = "Safe Side R";
 			con.print(0,0, "Aut 5: %s", autstr);
 		}
 		else if (atn ==6) {
-			autstr = "Straight2";
+			autstr = "Safe Side B";
 			con.print(0,0, "Aut 6: %s", autstr);
 		}
 		else if (atn ==7) {
-			autstr = "Red Ring Rush";
+			autstr = "Middle Rush R";
 			con.print(0,0, "Aut 7: %s", autstr);
 		} 
 		else if (atn ==8) {
-			autstr = "Blue Ring Rush";
+			autstr = "Middel Rush B";
 			con.print(0,0, "Aut 8: %s", autstr);
 		}
 		else if (atn ==9) {
@@ -175,8 +175,7 @@ if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER
 
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-	driveStraight2(2500);
-	//driveTurn2(90);
+	slow = !slow;
 
 		}
 
