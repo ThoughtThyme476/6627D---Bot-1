@@ -492,7 +492,7 @@ void driveStraight(int target) {
     double variKP = 0;
     x = double(abs(turnv));
     timeout = ( 0.000000157884*pow(x,5)) + (-0.0000665526*pow(x,4)) + (0.00958473*pow(x,3)) + (-0.543051*pow(x,2)) + (15.24298*(x)) + 390.67851;
-    // variKD = ((-0.000000010414) * pow(x,5)) + (0.00000436151 * pow(x,4)) + (-0.000635881 * pow(x,3)) + (0.0378021 * pow(x,2)) + (-0.805858 * x) + 69.3766;
+    // variKD = ((-0.000000010414) * pow(x,5)) + (0.00000436151 * pow(x,4)) + (-0.000635881 * pow(x,3)) + (0.0378021 * pow(x,2)) + (-0.805858 * x) + 69.3766
     // variKP = ((0.00000000017809) * pow(x,5)) + (-0.000000087322 * pow(x,4)) + (0.000015948* pow(x,3)) + (-0.00128717 * pow(x,2)) + (0.041072 * x) + 6.7388;
 
    // setConstants(TURN_KP, TURN_KI, TURN_KD); 
@@ -679,7 +679,7 @@ void driveStraight2(int target) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(2.9, 0, 0);
+            setConstants(2.75, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }  
@@ -959,7 +959,7 @@ void driveStraightCslow(int target,int speed) {
     x = double(abs(target));
       timeout = (0.00000000000186868* pow(x,5)) + ( 0.0000000088471 * pow(x,4)) + (-0.0000129229 * pow(x,3)) + (0.00626712 * pow(x,2)) + (0.35013 * x) + 749.45788;
        timeout = timeout * (2 - (double(speed)/100.0));
-       
+
       if (target > 0){ 
     target = target + 500;
  } else{
@@ -981,7 +981,7 @@ void driveStraightCslow(int target,int speed) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(5, 0, 0);
+            setConstants(4.5, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }   
@@ -1698,7 +1698,7 @@ void driveStraightSlow(int target, int speed) {
     while (true){
         encoderAVG = (LF.get_position() + RF.get_position()) / 2;
         if(abs(target - encoderAVG) < 25){
-            setConstants(3.9, 0, 0);
+            setConstants(3.75, 0, 0);
         } else{
             setConstants(STRAIGHT_KP, STRAIGHT_KI, STRAIGHT_KD); 
         }  

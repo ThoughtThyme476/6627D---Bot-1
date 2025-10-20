@@ -13,7 +13,7 @@ bool stay_clamp = true;
 using namespace pros;
 using namespace std;
 
-int atn = 9;
+int atn = 3;
 string autstr;
 // Task colorSortTask;
 // bool colorSortActive = false;
@@ -68,19 +68,19 @@ while(true){
 			con.print(0,0, "Aut 0:%s", autstr);
 		}
 		else if (atn ==1) {
-			autstr = "RED AWP";
+			autstr = "AWP R";
 			con.print(0,0, "Aut 1: %s", autstr);
 		}
 		else if (atn ==2) {
-			autstr = "BLUE AWP";
+			autstr = "AWP L";
 			con.print(0,0, "Aut 2: %s", autstr);
 		}
 		else if (atn ==3) {
-			autstr = "75% RED";
+			autstr = "75% L";
 			con.print(0,0, "Aut 3: %s", autstr);
 		}
 		else if (atn ==4) {
-			autstr = "75% BLUE";
+			autstr = "75% R";
 			con.print(0,0, "Aut 4: %s", autstr);
 		}
 		else if (atn ==5) {
@@ -88,7 +88,7 @@ while(true){
 			con.print(0,0, "Aut 5: %s", autstr);
 		}
 		else if (atn ==6) {
-			autstr = "Safe Side B";
+			autstr = "Safe Side L";
 			con.print(0,0, "Aut 6: %s", autstr);
 		}
 		else if (atn ==7) {
@@ -96,7 +96,7 @@ while(true){
 			con.print(0,0, "Aut 7: %s", autstr);
 		} 
 		else if (atn ==8) {
-			autstr = "Middel Rush B";
+			autstr = "Middel Rush L";
 			con.print(0,0, "Aut 8: %s", autstr);
 		}
 		else if (atn ==9) {
@@ -173,10 +173,32 @@ if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER
 // }
 // Values between LOWER_THRESHOLD and UPPER_THRESHOLD maintain previous state
 
+if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_A)) {
+	slow = !slow;
+	// driveStraight2(1000);
+	// driveTurn2(90);
+	// driveStraight2(1000);
+	// driveTurn2(180);
+	// driveStraight2(1000);
+	// driveTurn2(-90);
+	// driveStraight2(1000);
+	// driveTurn2(0);
+	// driveStraight2(1000);
+	// driveTurn2(90);
+		}
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	slow = !slow;
-
+	// driveStraight2(1000);
+	// driveTurn2(90);
+	// driveStraight2(1000);
+	// driveTurn2(180);
+	// driveStraight2(1000);
+	// driveTurn2(-90);
+	// driveStraight2(1000);
+	// driveTurn2(0);
+	// driveStraight2(1000);
+	// driveTurn2(90);
 		}
 
 

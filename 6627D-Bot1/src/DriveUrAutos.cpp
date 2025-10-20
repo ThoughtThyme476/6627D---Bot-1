@@ -6,14 +6,13 @@
 #include "odom.h"
 #include "robot.h"
 #include "pid.h"
-#include "adi.h"
+//#include "adi.h"
 #include "okapi/impl/device/button/adiButton.hpp"
-#include "robot.cpp"
 
-pros::ADIDigitalOut TongueMech ('A',false);
-pros::ADIDigitalOut MiddleHood ('D',false);
-pros::ADIDigitalOut Descore('C',false);
-pros::ADIDigitalOut Park('B', false);
+// pros::ADIDigitalOut TongueMech ('A',false);
+// pros::ADIDigitalOut MiddleHood ('D',false);
+// pros::ADIDigitalOut Descore('C',false);
+// pros::ADIDigitalOut Park('B', false);
 
 struct Movement {
     enum Type { STRAIGHT, TURN, MAININTAKE, INTAKE1, INTAKE2, PARK, TONGUE, DESCORE, MIDDLE_HOOD };
@@ -166,7 +165,7 @@ void recordMovement(int duration_ms) {
 
         if(middleHoodActive != lastMiddleHoodState) {
             currentMiddleHoodState = middleHoodActive;
-            MiddleHood.set_value(middleHoodActive);
+            //MiddleHood.set_value(middleHoodActive);
             recordedPath.push_back(Movement(Movement::MIDDLE_HOOD, 0, 0, middleHoodActive));
         }
 

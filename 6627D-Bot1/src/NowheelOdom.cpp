@@ -23,6 +23,22 @@ namespace SensorTracker {
         double maxValid = 2000.0;
         double smoothAlpha = 0.3;
         bool requirePair = false;
+
+        // Reference point configurations
+        struct WallReference {
+            double distance;     // Expected distance in mm
+            double tolerance;    // Allowable deviation in mm
+            bool isValid;       // Whether this reference is currently valid
+        };
+
+        WallReference backWall;
+        WallReference leftWall;
+        WallReference rightWall;
+        double interferenceThreshold = 200.0;
+
+        // Turning compensation
+        double turnSpeedThreshold = 20.0;  // deg/sec
+        double turnCompensation = 0.8;     // Reduce sensitivity during turns
     };
 
     static Config g_config;
@@ -43,7 +59,104 @@ namespace SensorTracker {
         g_validY = false;
     }
 
+    // Track multiple reference points
+    static struct ReferenceState {
+        double lastBackDist = 0.0;
+        double lastLeftDist = 0.0;
+        double lastRightDist = 0.0;
+        bool inInterference = false;
+        int interferenceCount = 0;
+    } refState;
+
+    void updateWallReference(double currentDist, Config::WallReference& wall) {
+        if (isValidReading(currentDist)) {
+            // Update reference if it's the first reading or within tolerance
+            if (!wall.isValid || std::abs(currentDist - wall.distance) < wall.tolerance) {
+                wall.distance = currentDist;
+                wall.isValid = true;
+            }
+        }
+    }
+
+    bool detectInterference(int32_t leftDist, int32_t rightDist, int32_t backDist) {
+        // Get turning speed from IMU
+        double turnSpeed = std::abs(imu.get_gyro_rate().z);
+        bool isTurning = turnSpeed > g_config.turnSpeedThreshold;
+        
+        bool suspiciousReading = false;
+
+        // Modify thresholds during turning
+        double currentThreshold = g_config.interferenceThreshold;
+        if (isTurning) {
+            currentThreshold *= (1.0 / g_config.turnCompensation);  // More forgiving during turns
+        }
+
+        // Check for sudden changes in width
+        if (isValidReading(leftDist) && isValidReading(rightDist)) {
+            double totalWidth = leftDist + rightDist;
+            double expectedWidth = g_config.backWall.isValid ? 
+                (g_config.fieldHalfX * 2.0) : (refState.lastLeftDist + refState.lastRightDist);
+            
+            if (!isTurning && std::abs(totalWidth - expectedWidth) > currentThreshold) {
+                suspiciousReading = true;
+            }
+        }
+
+        // Only use back sensor during turns (more reliable)
+        if (isTurning) {
+            if (isValidReading(backDist) && refState.lastBackDist > 0) {
+                double backDelta = std::abs(backDist - refState.lastBackDist);
+                if (backDelta > currentThreshold) {
+                    suspiciousReading = true;
+                }
+            }
+        }
+
+        // Update interference state
+        if (suspiciousReading) {
+            refState.interferenceCount++;
+        } else {
+            refState.interferenceCount = std::max(0, refState.interferenceCount - 1);
+        }
+
+        // Update last valid readings
+        if (isValidReading(backDist)) refState.lastBackDist = backDist;
+        if (isValidReading(leftDist)) refState.lastLeftDist = leftDist;
+        if (isValidReading(rightDist)) refState.lastRightDist = rightDist;
+
+        refState.inInterference = (refState.interferenceCount >= 3);
+        return refState.inInterference;
+    }
+
     bool update(int32_t frontDist, int32_t backDist, int32_t leftDist, int32_t rightDist) {
+        // Get turning status
+        double turnSpeed = std::abs(imu.get_gyro_rate().z);
+        bool isTurning = turnSpeed > g_config.turnSpeedThreshold;
+
+        // Update wall references
+        updateWallReference(backDist, g_config.backWall);
+        if (!isTurning) {  // Only update side references when not turning
+            updateWallReference(leftDist, g_config.leftWall);
+            updateWallReference(rightDist, g_config.rightWall);
+        }
+
+        bool interference = detectInterference(leftDist, rightDist, backDist);
+
+        if (interference || isTurning) {
+            // During turns or interference, prefer back sensor for Y position
+            if (isValidReading(backDist) && g_config.backWall.isValid) {
+                g_yPos = -g_config.fieldHalfY + backDist + g_config.offsetBack;
+                g_validY = true;
+            } else {
+                g_validY = false;
+            }
+            
+            if (isTurning) {
+                g_validX = false;  // Don't trust X position during turns
+            }
+            return g_validY;
+        }
+
         // X position from left/right sensors
         double newX = NAN;
         bool haveX = false;
@@ -88,6 +201,18 @@ namespace SensorTracker {
     double getY() { return g_yPos; }
     bool isValidX() { return g_validX; }
     bool isValidY() { return g_validY; }
+
+    // Add this new function
+    void setInitialBackWall(double distance) {
+        g_config.backWall.distance = distance;
+        g_config.backWall.isValid = true;
+        
+        // Initialize Y position based on back wall
+        if (isValidReading(refState.lastBackDist)) {
+            g_yPos = -g_config.fieldHalfY + refState.lastBackDist + g_config.offsetBack;
+            g_validY = true;
+        }
+    }
 }
 
 // Declare sensors with proper port numbers
@@ -108,6 +233,23 @@ void setupSensors() {
     cfg.minValid = 20.0;        // 20mm minimum valid reading
     cfg.maxValid = 2000.0;      // 2000mm maximum valid reading
     cfg.smoothAlpha = 0.3;      // Smoothing factor (0.1 = more smooth, 0.9 = more responsive)
+    
+    // Initialize wall references
+    cfg.backWall.distance = 0.0;    // Will be set on first valid reading
+    cfg.backWall.tolerance = 100.0;  // 100mm tolerance
+    cfg.backWall.isValid = false;
+    
+    cfg.leftWall.distance = 0.0;
+    cfg.leftWall.tolerance = 100.0;
+    cfg.leftWall.isValid = false;
+    
+    cfg.rightWall.distance = 0.0;
+    cfg.rightWall.tolerance = 100.0;
+    cfg.rightWall.isValid = false;
+    
+    cfg.interferenceThreshold = 200.0;
+    cfg.turnSpeedThreshold = 20.0;  // Adjust based on your turn speeds
+    cfg.turnCompensation = 0.8;     // Adjust based on testing
     
     SensorTracker::init(cfg);
 }
@@ -244,6 +386,8 @@ namespace Navigation {
         // Check if we're at target
         if (std::abs(error) < HEADING_TOLERANCE) {
             chasMove(0,0,0,0,0,0);
+            // Add small delay to let sensors stabilize
+            pros::delay(100);
             return true;
         }
         
@@ -267,26 +411,32 @@ namespace Navigation {
 
     // Modified drive function with final heading
     bool driveToPointAndTurn(double targetX, double targetY, double finalHeadingDeg) {
-        static enum class State { DRIVING, TURNING } state = State::DRIVING;
+        static enum class State { DRIVING, TURNING, STABILIZING } state = State::DRIVING;
+        static uint32_t stabilizeStart = 0;
         
-        if (!SensorTracker::isValidX() || !SensorTracker::isValidY()) {
-            chasMove(0,0,0,0,0,0);
-            return false;
-        }
-
         switch (state) {
             case State::DRIVING: {
                 if (driveToPoint(targetX, targetY)) {
-                    state = State::TURNING;  // Reached position, start turning
+                    state = State::TURNING;
                 }
                 break;
             }
             
             case State::TURNING: {
                 if (turnToHeading(finalHeadingDeg)) {
-                    state = State::DRIVING;  // Reset for next use
-                    return true;  // Done!
+                    state = State::STABILIZING;
+                    stabilizeStart = pros::millis();
                 }
+                break;
+            }
+
+            case State::STABILIZING: {
+                // Wait for sensors to stabilize after turn
+                if (pros::millis() - stabilizeStart > 250) {  // 250ms stabilization time
+                    state = State::DRIVING;  // Reset for next use
+                    return true;
+                }
+                chasMove(0,0,0,0,0,0);  // Stay still while stabilizing
                 break;
             }
         }
@@ -313,6 +463,32 @@ void goToPosition(double x, double y) {
     }
 }
 
+void testNavigation() {
+    setupSensors();
+    SensorTracker::setInitialBackWall(500.0);  // Set initial position
+    
+    // Try a simple square pattern
+    while (!Navigation::driveToPointAndTurn(0, 1000, 0)) {
+        updateSensors();
+        pros::delay(10);
+    }
+    
+    while (!Navigation::driveToPointAndTurn(1000, 1000, 90)) {
+        updateSensors();
+        pros::delay(10);
+    }
+    
+    while (!Navigation::driveToPointAndTurn(1000, 0, 180)) {
+        updateSensors();
+        pros::delay(10);
+    }
+    
+    while (!Navigation::driveToPointAndTurn(0, 0, 0)) {
+        updateSensors();
+        pros::delay(10);
+    }
+}
+
 /*
 --------------------------------------EXAMPLES----------------------------
 // Drive to (500,500) then turn to face 90 degrees
@@ -331,8 +507,16 @@ Adjust SLOWDOWN_DISTANCE for smooth deceleration
 Adjust POSITION_TOLERANCE based on accuracy needs
 
 TURN:
+Remember to tune turnSpeedThreshold and turnCompensation based on your robot's actual turning behavior!
 Adjust HEADING_TOLERANCE for desired accuracy
 Adjust TURN_MIN_POWER to overcome static friction
 Adjust TURN_MAX_POWER for smooth but quick turning
 Tune Heading_KP for turning performance
+
+Remember to:
+
+Test and adjust timeout values based on your robot's speed
+Tune PID values in the Navigation namespace
+Verify your sensor offsets are correct in setupSensors()
+Make sure your IMU is calibrated properly
 */
