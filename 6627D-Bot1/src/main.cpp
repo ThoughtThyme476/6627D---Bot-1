@@ -125,7 +125,7 @@ eyes.set_led_pwm(100);
 int intakeMode = 0; // 0-3 for different intake modes
 int number = 0;
 bool autoPark = false;
-
+int colorTimer = 0;
 
 while (true) {
 
@@ -174,18 +174,23 @@ if ((Toggle.get() < LOWER_THRESHOLD) && (E_CONTROLLER_DIGITAL_R1 || E_CONTROLLER
 // Values between LOWER_THRESHOLD and UPPER_THRESHOLD maintain previous state
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_A)) {
-	slow = !slow;
-	// driveStraight2(1000);
-	// driveTurn2(90);
-	// driveStraight2(1000);
-	// driveTurn2(180);
-	// driveStraight2(1000);
-	// driveTurn2(-90);
-	// driveStraight2(1000);
-	// driveTurn2(0);
-	// driveStraight2(1000);
-	// driveTurn2(90);
+		autoPark = true;
+		colorTimer = 0;
+		bool breaker = false;
+		while (autoPark == true){
+			Intake1.move(-127);
+			MainIntake.move(-97);
+			Intake2.move(127);
+			if ((eyes.get_hue() < 45 && eyes.get_proximity() < 150) && breaker == false){
+				Intake1.move(50);
+				Intake2.move(-127);
+				delay(1000);
+					breaker = false;
+				}
+			}
+
 		}
+
 
 if (con.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
 	slow = !slow;

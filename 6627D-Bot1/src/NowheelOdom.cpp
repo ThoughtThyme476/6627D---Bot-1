@@ -128,7 +128,25 @@ namespace SensorTracker {
         return refState.inInterference;
     }
 
+    static uint32_t lastValidUpdate = 0;
+    static const uint32_t SENSOR_TIMEOUT = 500; // 500ms
+
     bool update(int32_t frontDist, int32_t backDist, int32_t leftDist, int32_t rightDist) {
+        bool validUpdate = false;
+        
+        if (isValidReading(frontDist) || isValidReading(backDist) || 
+            isValidReading(leftDist) || isValidReading(rightDist)) {
+            lastValidUpdate = pros::millis();
+            validUpdate = true;
+        }
+        
+        // Check for sensor timeout
+        if (pros::millis() - lastValidUpdate > SENSOR_TIMEOUT) {
+            g_validX = false;
+            g_validY = false;
+            return false;
+        }
+
         // Get turning status
         double turnSpeed = std::abs(imu.get_gyro_rate().z);
         bool isTurning = turnSpeed > g_config.turnSpeedThreshold;
@@ -290,19 +308,137 @@ void updateSensors() {
 }
 
 namespace Navigation {
-    // Tuning constants
-    constexpr double DRIVE_KP = 0.1;      // Speed proportional gain (tune this)
-    constexpr double Heading_KP = 2.0;     // Turning proportional gain (tune this)
-    constexpr double MIN_DRIVE_POWER = 20; // Minimum power to move
-    constexpr double MAX_DRIVE_POWER = 90; // Maximum power (0-127)
+    bool isImuCalibrated() {
+        return !imu.is_calibrating();
+    }
+
+    // Move StallDetector definition to the top of Navigation namespace
+    struct StallDetector {
+        static constexpr double MIN_VELOCITY = 5.0;  // mm/sec
+        static constexpr uint32_t STALL_TIME = 500;  // ms
+        
+        double lastX = 0, lastY = 0;
+        uint32_t lastTime = 0;
+        uint32_t stallStart = 0;
+        bool isStalled = false;
+
+        bool detectStall(double currentX, double currentY) {
+            uint32_t now = pros::millis();
+            if (lastTime == 0) {
+                lastTime = now;
+                lastX = currentX;
+                lastY = currentY;
+                return false;
+            }
+
+            double dt = (now - lastTime) / 1000.0;  // seconds
+            double dx = currentX - lastX;
+            double dy = currentY - lastY;
+            double velocity = std::hypot(dx, dy) / dt;
+
+            if (velocity < MIN_VELOCITY) {
+                if (!isStalled) {
+                    stallStart = now;
+                    isStalled = true;
+                }
+                return (now - stallStart) >= STALL_TIME;
+            }
+
+            isStalled = false;
+            lastX = currentX;
+            lastY = currentY;
+            lastTime = now;
+            return false;
+        }
+    };
+    
+    static StallDetector stallDetector;
+
+    // Add handlePositionLoss declaration before it's used
+    bool handlePositionLoss();  // Declaration
+
+    // Tuning constants - adjusted for -127 to 127 range
+    constexpr double DRIVE_KP = 0.1;       // Keep this as is
+    constexpr double Heading_KP = 1.1;     // Keep this as is
+    constexpr double MIN_DRIVE_POWER = 20; // 20/127 ~15% power
+    constexpr double MAX_DRIVE_POWER = 90; // 90/127 ~70% power - prevent tipping
     constexpr double POSITION_TOLERANCE = 50.0; // 50mm tolerance for arrival
     constexpr double SLOWDOWN_DISTANCE = 500.0; // Start slowing 500mm from target
     constexpr double HEADING_TOLERANCE = 3.0;   // degrees
-    constexpr double TURN_MIN_POWER = 15.0;     // minimum power for turning
-    constexpr double TURN_MAX_POWER = 70.0;     // maximum power for turning
+    constexpr double TURN_MIN_POWER = 15;      // 15/127 ~12% power
+    constexpr double TURN_MAX_POWER = 70;      // 70/127 ~55% power
+
+    // Min effective power threshold also needs to be in voltage range
+    const double MIN_EFFECTIVE_POWER = 10.0;  // 10/127 ~8% power
+
+    // Add acceleration limiting
+    static double lastLeftPower = 0;
+    static double lastRightPower = 0;
+    static constexpr double MAX_POWER_CHANGE = 8.0; // Maximum power change per 10ms
+    
+    double limitAcceleration(double requestedPower, double& lastPower) {
+        double powerChange = requestedPower - lastPower;
+        powerChange = std::clamp(powerChange, -MAX_POWER_CHANGE, MAX_POWER_CHANGE);
+        lastPower += powerChange;
+        return lastPower;
+    }
+    
+    struct MovementMonitor {
+        double lastX = 0;
+        double lastY = 0;
+        uint32_t stuckTime = 0;
+        static constexpr uint32_t STUCK_TIMEOUT = 2000; // 2 seconds
+        
+        bool isStuck(double currentX, double currentY) {
+            double movement = std::hypot(currentX - lastX, currentY - lastY); //added as a fix for for deadlock detection 
+            if (movement < 5.0) { // Less than 5mm movement
+                stuckTime += 10;  // Assuming 10ms loop time
+            } else {
+                stuckTime = 0;
+            }
+            
+            lastX = currentX;
+            lastY = currentY;
+            return stuckTime >= STUCK_TIMEOUT;
+        }
+    };
+    
+    static MovementMonitor moveMonitor;
+    
+    // Add reset function
+    void resetAccelerationLimits() {
+        lastLeftPower = 0;
+        lastRightPower = 0;
+    }
 
     // Drive to specific (x,y) coordinates
     bool driveToPoint(double targetX, double targetY) {
+        // Add IMU check at start
+        if (!isImuCalibrated()) {
+            chasMove(0,0,0,0,0,0);
+            return false;
+        }
+        
+        static double lastTargetX = 0, lastTargetY = 0;
+        
+        // Reset acceleration limits on new target
+        if (lastTargetX != targetX || lastTargetY != targetY) {
+            resetAccelerationLimits();
+            lastTargetX = targetX;
+            lastTargetY = targetY;
+        }
+
+        // Handle position loss
+        if (handlePositionLoss()) {
+            return false;
+        }
+
+        // Check for stall condition
+        if (stallDetector.detectStall(SensorTracker::getX(), SensorTracker::getY())) {
+            chasMove(0,0,0,0,0,0);
+            return false;
+        }
+
         if (!SensorTracker::isValidX() || !SensorTracker::isValidY()) {
             // Stop if position invalid
             chasMove(0,0,0,0,0,0);
@@ -328,14 +464,18 @@ namespace Navigation {
         double targetHeading = std::atan2(deltaY, deltaX);
         double currentHeading = imu.get_rotation() * M_PI / 180.0; // Convert IMU degrees to radians
         
+        // Should be modified to handle IMU wrap-around:
+        double currentHeadingRad = fmod(imu.get_rotation(), 360.0) * M_PI / 180.0;
+        if (currentHeadingRad < 0) currentHeadingRad += 2 * M_PI;
+        
         // Calculate heading error (-π to π)
-        double headingError = targetHeading - currentHeading;
+        double headingError = targetHeading - currentHeadingRad;
         while (headingError > M_PI) headingError -= 2*M_PI;
         while (headingError < -M_PI) headingError += 2*M_PI;
 
         // Calculate drive power with slowdown
         double drivePower = DRIVE_KP * distance;
-        if (distance < SLOWDOWN_DISTANCE) {
+        if (distance < SLOWDOWN_DISTANCE && SLOWDOWN_DISTANCE > 0) {
             drivePower *= (distance / SLOWDOWN_DISTANCE); // Gradual slowdown
         }
         drivePower = std::clamp(drivePower, MIN_DRIVE_POWER, MAX_DRIVE_POWER);
@@ -347,17 +487,40 @@ namespace Navigation {
         double leftPower = drivePower - turnPower;
         double rightPower = drivePower + turnPower;
         
+        // Should add minimum power to overcome static friction:
+        const double MIN_EFFECTIVE_POWER = 5.0; //added as a fix for overcoming friction
+        if (std::abs(leftPower) < MIN_EFFECTIVE_POWER && std::abs(rightPower) < MIN_EFFECTIVE_POWER) {
+            if (std::abs(turnPower) > MIN_EFFECTIVE_POWER) {
+                // If only turning, maintain minimum turn power
+                leftPower = turnPower > 0 ? -MIN_EFFECTIVE_POWER : MIN_EFFECTIVE_POWER;
+                rightPower = -leftPower;
+            } else {
+                // If power too low, stop
+                chasMove(0,0,0,0,0,0);
+                return false;
+            }
+        }
+
         // Normalize powers to max range
         double maxPower = std::max(std::abs(leftPower), std::abs(rightPower));
-        if (maxPower > MAX_DRIVE_POWER) {
+        if (maxPower > MAX_DRIVE_POWER && maxPower != 0) {
             leftPower *= MAX_DRIVE_POWER / maxPower;
             rightPower *= MAX_DRIVE_POWER / maxPower;
         }
 
+        // Apply acceleration limiting
+        leftPower = limitAcceleration(leftPower, lastLeftPower);
+        rightPower = limitAcceleration(rightPower, lastRightPower);
+        
         // Apply to motors
-        chasMove(leftPower, leftPower, leftPower, 
+        chasMove(leftPower, leftPower, leftPower,
                  rightPower, rightPower, rightPower);
 
+        if (moveMonitor.isStuck(currentX, currentY)) {
+            chasMove(0,0,0,0,0,0);
+            return false;
+        }
+        
         return false; // Not there yet
     }
 
@@ -375,13 +538,16 @@ namespace Navigation {
     }
 
     // New function to turn to absolute heading
-    bool turnToHeading(double targetDegrees) {
-        double currentDeg = imu.get_rotation();
-        double error = targetDegrees - currentDeg;
+    bool turnToHeading2(double targetDegrees) {
+        double currentDeg = std::fmod(imu.get_rotation(), 360.0);
+        if (currentDeg < 0) currentDeg += 360.0;
         
-        // Normalize error to [-180, 180]
-        while (error > 180) error -= 360;
-        while (error < -180) error += 360;
+        double targetNorm = std::fmod(targetDegrees, 360.0);
+        if (targetNorm < 0) targetNorm += 360.0;
+        
+        double error = targetNorm - currentDeg;
+        if (error > 180) error -= 360;
+        if (error < -180) error += 360;
         
         // Check if we're at target
         if (std::abs(error) < HEADING_TOLERANCE) {
@@ -413,6 +579,16 @@ namespace Navigation {
     bool driveToPointAndTurn(double targetX, double targetY, double finalHeadingDeg) {
         static enum class State { DRIVING, TURNING, STABILIZING } state = State::DRIVING;
         static uint32_t stabilizeStart = 0;
+        static double lastTargetX = 0, lastTargetY = 0;
+        static double lastHeading = 0;  // Add this
+        
+        // Reset state if any target changes
+        if (lastTargetX != targetX || lastTargetY != targetY || lastHeading != finalHeadingDeg) {
+            state = State::DRIVING;
+            lastTargetX = targetX;
+            lastTargetY = targetY;
+            lastHeading = finalHeadingDeg;
+        }
         
         switch (state) {
             case State::DRIVING: {
@@ -423,7 +599,7 @@ namespace Navigation {
             }
             
             case State::TURNING: {
-                if (turnToHeading(finalHeadingDeg)) {
+                if (turnToHeading2(finalHeadingDeg)) {  // Changed to turnToHeading2
                     state = State::STABILIZING;
                     stabilizeStart = pros::millis();
                 }
@@ -443,7 +619,45 @@ namespace Navigation {
         
         return false;
     }
-}
+
+    // Add position recovery strategy
+    enum class RecoveryState { NORMAL, LOST_POSITION, RECOVERING };
+    static RecoveryState recoveryState = RecoveryState::NORMAL;
+    static uint32_t recoveryStartTime = 0;
+
+    bool handlePositionLoss() {
+        static uint32_t recoveryTimeout = 0;
+        
+        switch (recoveryState) {
+            case RecoveryState::NORMAL:
+                if (!SensorTracker::isValidX() || !SensorTracker::isValidY()) {
+                    recoveryState = RecoveryState::LOST_POSITION;
+                    recoveryStartTime = pros::millis();
+                }
+                return false;
+
+            case RecoveryState::LOST_POSITION:
+                chasMove(0,0,0,0,0,0);
+                if (pros::millis() - recoveryStartTime > 250) {
+                    recoveryState = RecoveryState::RECOVERING;
+                }
+                return false;
+
+            case RecoveryState::RECOVERING:
+                if (pros::millis() - recoveryStartTime > 2000) { // 2 second timeout
+                    // Give up recovery after timeout
+                    recoveryState = RecoveryState::NORMAL;
+                    return false;
+                }
+                if (SensorTracker::isValidX() && SensorTracker::isValidY()) {
+                    recoveryState = RecoveryState::NORMAL;
+                    return false;
+                }
+                chasMove(-15, -15, -15, 15, 15, 15);
+                return false;
+        }
+        return false;
+    }
 
 // Example usage function
 void goToPosition(double x, double y) {
@@ -486,9 +700,10 @@ void testNavigation() {
     while (!Navigation::driveToPointAndTurn(0, 0, 0)) {
         updateSensors();
         pros::delay(10);
+        }
     }
-}
 
+}
 /*
 --------------------------------------EXAMPLES----------------------------
 // Drive to (500,500) then turn to face 90 degrees
@@ -496,6 +711,33 @@ goToPositionAndTurn(500, 500, 90.0);
 
 // Or with timeout
 Navigation::driveToPointWithTimeout(500, 500, 90.0, 5000);
+
+//use in autonomous
+void autonomous() {
+    setupSensors();
+    SensorTracker::setInitialBackWall(500.0);  // Set starting position
+    
+    // Basic movement sequence
+    Navigation::driveToPointWithTimeout(0, 1000, 3000);  // Drive forward 1m
+    Navigation::turnToHeading(90);                       // Turn 90 degrees
+    Navigation::driveToPointWithTimeout(0, 0, 3000);     // Return to start
+}
+
+// Good example - proper control loop
+void autonomous() {
+    setupSensors();
+    SensorTracker::setInitialBackWall(500.0);
+    
+    while (!Navigation::driveToPointWithTimeout(0, 1000, 3000)) {
+        updateSensors();  // Regular position updates
+        pros::delay(10);  // Give time for system to respond
+    }
+    
+    while (!Navigation::turnToHeading(90)) {
+        updateSensors();
+        pros::delay(10);
+    }
+}
 --------------------------------------------------------------------------
 
 TUNING NOTES:
@@ -519,4 +761,74 @@ Test and adjust timeout values based on your robot's speed
 Tune PID values in the Navigation namespace
 Verify your sensor offsets are correct in setupSensors()
 Make sure your IMU is calibrated properly
+
+TUNABLE VARIABLES:
+
+SENSOR CONFIGURATION:
+1. cfg.offsetFront     - Distance from robot center to front sensor (mm)
+2. cfg.offsetBack      - Distance from robot center to back sensor (mm)
+3. cfg.offsetLeft      - Distance from robot center to left sensor (mm)
+4. cfg.offsetRight     - Distance from robot center to right sensor (mm)
+5. cfg.smoothAlpha     - Position smoothing factor (0.1-0.9)
+6. cfg.minValid        - Minimum valid sensor reading (mm)
+7. cfg.maxValid        - Maximum valid sensor reading (mm)
+
+INTERFERENCE DETECTION:
+8. cfg.interferenceThreshold  - Threshold for detecting sudden changes (mm)
+9. cfg.turnSpeedThreshold    - Speed above which robot is considered turning (deg/sec)
+10. cfg.turnCompensation     - Factor to adjust sensitivity during turns (0.0-1.0)
+11. cfg.backWall.tolerance   - Allowable deviation in wall readings (mm)
+
+NAVIGATION CONSTANTS:
+12. DRIVE_KP           - Forward movement proportional gain
+13. HEADING_KP         - Turning movement proportional gain
+14. MIN_DRIVE_POWER    - Minimum power to overcome friction
+15. MAX_DRIVE_POWER    - Maximum power (0-127)
+16. POSITION_TOLERANCE - How close robot needs to get to target (mm)
+17. SLOWDOWN_DISTANCE  - Distance to start slowing down (mm)
+18. HEADING_TOLERANCE  - Acceptable heading error (degrees)
+19. TURN_MIN_POWER     - Minimum power for turning
+20. TURN_MAX_POWER     - Maximum power for turning
+
+TUNING INSTRUCTIONS:
+
+1. SENSOR OFFSETS:
+   - Measure physical distances from robot center to each sensor
+   - Set offsetFront/Back/Left/Right to these measurements in millimeters
+   - Verify readings match actual distances from walls
+
+2. SMOOTHING AND VALIDITY:
+   - Start with smoothAlpha = 0.3, increase for more responsiveness
+   - Set minValid just above minimum reliable sensor reading
+   - Set maxValid just below maximum reliable sensor reading
+
+3. INTERFERENCE DETECTION:
+   - Set interferenceThreshold to ~200mm initially
+   - Increase if false positives occur, decrease if missing interference
+   - Set turnSpeedThreshold to speed where sensor readings become unreliable
+   - Adjust turnCompensation (0.8 typical) - lower = more forgiving during turns
+
+4. DRIVE TUNING:
+   - Start with DRIVE_KP = 0.1
+   - Gradually increase until robot moves quickly but doesn't overshoot
+   - Set MIN_DRIVE_POWER just high enough to move robot
+   - Set MAX_DRIVE_POWER to prevent tipping/wheel slip
+   - Set POSITION_TOLERANCE based on required accuracy
+   - Set SLOWDOWN_DISTANCE to allow smooth deceleration
+
+5. TURNING TUNING:
+   - Start with HEADING_KP = 2.0
+   - Increase until turns are quick but don't oscillate
+   - Set HEADING_TOLERANCE based on required turning accuracy
+   - Set TURN_MIN_POWER just high enough to start turning
+   - Set TURN_MAX_POWER to prevent skidding during turns
+
+6. WALL REFERENCE:
+   - Set backWall.tolerance based on field variation (~100mm typical)
+   - Adjust if position updates are too strict/lenient
+
+
+
+
+Remember to test each parameter in isolation and verify changes improve overall performance.
 */

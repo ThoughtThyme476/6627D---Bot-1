@@ -31,22 +31,22 @@
     Intake2.move(0);
     driveStraightC(100);
     MainIntake.move(-127);
-    driveStraight2(1995);
     Intake1.move(127);
+    driveStraight2(1975);
     TongueMech.set_value(true);
     driveTurn2(180);
     delay(100);
     driveStraightSlow(675, 95);
     // //driveTurn2(178);
-    driveStraight2(10);
+    //driveStraight2(10);
     TongueMech.set_value(false);
-    driveStraightC(-920);
+    driveStraightSlow(-930, 75);
     MainIntake.move(127);
     delay(10);
     Intake2.move(127);
     MainIntake.move(-127);
     Intake1.move(-127);
-    driveTurn2(180);
+    driveTurn2(178);
   }
 
  void Ring_Rush_red(){ 
